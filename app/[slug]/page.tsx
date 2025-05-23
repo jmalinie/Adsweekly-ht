@@ -22,7 +22,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     const post = await getPostBySlug(params.slug)
 
     if (!post || post.status !== "published") {
-      notFound()
+     // notFound()
     }
 
     const postDate = formatDate(post.published_at || post.created_at)
