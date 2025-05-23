@@ -3,7 +3,7 @@ import { ArrowRight, Store } from "lucide-react"
 import type { Metadata } from "next"
 
 import { Button } from "@/components/ui/button"
-import { BlogCard } from "@/components/blog-card"
+import { BlogCard } from "@/components/blog-card";
 import { getPublishedPosts, getFeaturedCategories } from "@/app/actions/post-actions"
 import { OptimizedImage } from "@/components/optimized-image"
 import { getSettingValue } from "@/lib/settings"
