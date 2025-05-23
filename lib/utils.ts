@@ -2,26 +2,29 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 /**
- * Combines class names using clsx and tailwind-merge
+ * Combines multiple class names into a single string using clsx and tailwind-merge
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 /**
- * Formats a date string into a localized format
- * @param dateString - The date string to format
- * @param locale - The locale to use for formatting (default: 'tr-TR')
- * @returns Formatted date string
+ * Formats a date string or Date object into a localized string
+ * @param dateString - The date string or Date object to format
+ * @param locale - The locale to use for formatting (default: 'tr-TR' for Turkish)
+ * @returns A formatted date string
  */
 export function formatDate(dateString: string | Date | null | undefined, locale = "tr-TR"): string {
-  if (!dateString) return "Tarih yok"
+  if (!dateString) {
+    return "Tarih yok"
+  }
 
   try {
     const date = typeof dateString === "string" ? new Date(dateString) : dateString
 
     // Check if date is valid
     if (isNaN(date.getTime())) {
+      console.error("Invalid date:", dateString)
       return "Geçersiz tarih"
     }
 
@@ -32,25 +35,26 @@ export function formatDate(dateString: string | Date | null | undefined, locale 
     })
   } catch (error) {
     console.error("Error formatting date:", error)
-    return "Tarih biçimlendirme hatası"
+    return "Tarih formatlanırken hata oluştu"
   }
 }
 
 /**
- * Truncates text to a specified length and adds ellipsis
+ * Truncates text to a specified length and adds an ellipsis
  * @param text - The text to truncate
- * @param maxLength - Maximum length before truncation
- * @returns Truncated text with ellipsis if needed
+ * @param length - The maximum length of the truncated text
+ * @returns The truncated text with an ellipsis
  */
-export function truncateText(text: string, maxLength: number): string {
-  if (!text || text.length <= maxLength) return text
-  return text.slice(0, maxLength) + "..."
+export function truncateText(text: string, length: number): string {
+  if (!text) return ""
+  if (text.length <= length) return text
+  return text.substring(0, length) + "..."
 }
 
 /**
  * Creates a URL-friendly slug from a string
  * @param text - The text to convert to a slug
- * @returns URL-friendly slug
+ * @returns A URL-friendly slug
  */
 export function slugify(text: string): string {
   return text
@@ -61,4 +65,6 @@ export function slugify(text: string): string {
     .replace(/&/g, "-and-") // Replace & with 'and'
     .replace(/[^\w-]+/g, "") // Remove all non-word characters
     .replace(/--+/g, "-") // Replace multiple - with single -
+    .replace(/^-+/, "") // Trim - from start of text
+    .replace(/-+$/, "") // Trim - from end of text
 }

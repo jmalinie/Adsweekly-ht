@@ -21,8 +21,14 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   try {
     const post = await getPostBySlug(params.slug)
 
-    if (!post || post.status !== "published") {
-     // notFound()
+    if (!post) {
+      console.error(`Post with slug "${params.slug}" not found`)
+      return notFound()
+    }
+
+    if (post.status !== "published") {
+      console.error(`Post with slug "${params.slug}" is not published`)
+      return notFound()
     }
 
     const postDate = formatDate(post.published_at || post.created_at)
