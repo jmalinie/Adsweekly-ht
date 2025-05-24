@@ -19,6 +19,12 @@ interface BlogPostPageProps {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   try {
+    // Validate slug format
+    if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "") {
+      console.error(`Invalid slug: "${params.slug}"`)
+      return notFound()
+    }
+
     const post = await getPostBySlug(params.slug)
 
     if (!post) {
@@ -27,7 +33,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     }
 
     if (post.status !== "published") {
-      console.error(`Post with slug "${params.slug}" is not published`)
+      console.error(`Post with slug "${params.slug}" is not published (status: ${post.status})`)
       return notFound()
     }
 
@@ -118,7 +124,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     )
   } catch (error) {
     console.error("Error rendering blog post:", error)
-    notFound()
+    // Don't throw the error, just return notFound
+    return notFound()
   }
 }
 
@@ -139,6 +146,13 @@ export async function generateStaticParams() {
 // Generate metadata
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   try {
+    // Validate slug
+    if (!params.slug || typeof params.slug !== "string") {
+      return {
+        title: "Article Not Found",
+      }
+    }
+
     const post = await getPostBySlug(params.slug)
 
     if (!post) {

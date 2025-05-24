@@ -13,8 +13,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { AdminHeader } from "@/components/admin-header"
-import { AdminSidebar } from "@/components/admin-sidebar"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { createPost, getCategories } from "@/app/actions/post-actions"
 import { toast } from "@/hooks/use-toast"
@@ -96,104 +94,98 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar />
-      <div className="flex flex-col flex-1">
-        <AdminHeader />
-        <main className="flex-1 p-6">
-          <div className="flex items-center mb-6">
-            <Link href="/admin/dashboard" passHref>
-              <Button variant="ghost" size="icon" className="mr-2">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Geri</span>
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Yeni Blog Yazısı</h1>
+    <div className="space-y-6">
+      <div className="flex items-center mb-6">
+        <Link href="/admin/dashboard" passHref>
+          <Button variant="ghost" size="icon" className="mr-2">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Geri</span>
+          </Button>
+        </Link>
+        <h1 className="text-2xl font-bold">Yeni Blog Yazısı</h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="space-y-2">
+          <Label htmlFor="title">Başlık</Label>
+          <Input
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Yazı başlığı"
+            required
+            dir="ltr"
+            style={{ direction: "ltr" }}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="excerpt">Özet</Label>
+          <Textarea
+            id="excerpt"
+            value={excerpt}
+            onChange={(e) => setExcerpt(e.target.value)}
+            placeholder="Yazı özeti..."
+            className="min-h-[100px]"
+            dir="ltr"
+            style={{ direction: "ltr" }}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="content">İçerik</Label>
+          <div className="text-sm text-muted-foreground mb-2">
+            💡 İpucu: Yazınızdaki ilk görsel otomatik olarak öne çıkan görsel olarak kullanılacaktır.
+          </div>
+          <RichTextEditor initialValue={content} onChange={setContent} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="status">Durum</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger id="status">
+                <SelectValue placeholder="Durum seçin" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Taslak</SelectItem>
+                <SelectItem value="published">Yayında</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Başlık</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Yazı başlığı"
-                required
-                dir="ltr"
-                style={{ direction: "ltr" }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="excerpt">Özet</Label>
-              <Textarea
-                id="excerpt"
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Yazı özeti..."
-                className="min-h-[100px]"
-                dir="ltr"
-                style={{ direction: "ltr" }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="content">İçerik</Label>
-              <div className="text-sm text-muted-foreground mb-2">
-                💡 İpucu: Yazınızdaki ilk görsel otomatik olarak öne çıkan görsel olarak kullanılacaktır.
-              </div>
-              <RichTextEditor initialValue={content} onChange={setContent} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="status">Durum</Label>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Durum seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Taslak</SelectItem>
-                    <SelectItem value="published">Yayında</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Kategoriler</Label>
-                <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
-                  {categories.map((category) => (
-                    <div key={category.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`category-${category.id}`}
-                        checked={selectedCategories.includes(category.id)}
-                        onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
-                      />
-                      <Label htmlFor={`category-${category.id}`} className="text-sm font-normal cursor-pointer">
-                        {category.name}
-                      </Label>
-                    </div>
-                  ))}
+          <div className="space-y-2">
+            <Label>Kategoriler</Label>
+            <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+              {categories.map((category) => (
+                <div key={category.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`category-${category.id}`}
+                    checked={selectedCategories.includes(category.id)}
+                    onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
+                  />
+                  <Label htmlFor={`category-${category.id}`} className="text-sm font-normal cursor-pointer">
+                    {category.name}
+                  </Label>
                 </div>
-              </div>
+              ))}
             </div>
+          </div>
+        </div>
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>Kaydediliyor...</>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Kaydet
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </main>
-      </div>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>Kaydediliyor...</>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Kaydet
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
