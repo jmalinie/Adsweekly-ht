@@ -17,12 +17,67 @@ interface BlogPostPageProps {
   }
 }
 
-// BlogPostPage fonksiyonunun başına slug validasyonu ekle
+// Dosya uzantılarını kontrol eden yardımcı fonksiyon
+function hasFileExtension(slug: string): boolean {
+  // Yaygın dosya uzantılarını kontrol et
+  const fileExtensions = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".svg",
+    ".webp",
+    ".ico",
+    ".bmp",
+    ".tiff",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".mp3",
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".wav",
+    ".zip",
+    ".rar",
+    ".tar",
+    ".gz",
+    ".7z",
+    ".html",
+    ".htm",
+    ".css",
+    ".js",
+    ".json",
+    ".xml",
+    ".txt",
+  ]
+
+  return fileExtensions.some((ext) => slug.toLowerCase().endsWith(ext))
+}
+
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   try {
-    // Validate slug format - dosya uzantısı kontrolü ekle
-    if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "" || params.slug.includes(".")) {
+    // Validate slug format - dosya uzantısı kontrolü
+    if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "") {
       console.error(`Invalid slug: "${params.slug}"`)
+      return notFound()
+    }
+
+    // Dosya uzantısı kontrolü
+    if (hasFileExtension(params.slug)) {
+      console.error(`Slug appears to be a file: "${params.slug}"`)
+      return notFound()
+    }
+
+    // Nokta içeren slug'ları reddet (muhtemelen dosya)
+    if (params.slug.includes(".")) {
+      console.error(`Slug contains dots, likely a file: "${params.slug}"`)
       return notFound()
     }
 
@@ -151,7 +206,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   try {
     // Validate slug
-    if (!params.slug || typeof params.slug !== "string") {
+    if (!params.slug || typeof params.slug !== "string" || hasFileExtension(params.slug)) {
       return {
         title: "Article Not Found",
       }

@@ -34,6 +34,37 @@ const nextConfig = {
       },
     ]
   },
+  // Yönlendirmeler
+  async redirects() {
+    return [
+      // Favicon ve diğer yaygın statik dosyaları public klasörüne yönlendir
+      {
+        source: "/favicon.ico",
+        destination: "/favicon.ico",
+        permanent: true,
+      },
+      {
+        source: "/apple-touch-icon.png",
+        destination: "/apple-icon.png",
+        permanent: true,
+      },
+      {
+        source: "/apple-touch-icon-precomposed.png",
+        destination: "/apple-icon.png",
+        permanent: true,
+      },
+      {
+        source: "/favicon-16x16.png",
+        destination: "/favicon.ico",
+        permanent: true,
+      },
+      {
+        source: "/favicon-32x32.png",
+        destination: "/favicon.ico",
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

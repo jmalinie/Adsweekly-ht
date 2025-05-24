@@ -10,6 +10,11 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: ["/admin/", "/api/"],
       },
+      // Statik dosyaları crawl etmeyi engelle
+      {
+        userAgent: "*",
+        disallow: ["/*.jpg$", "/*.jpeg$", "/*.png$", "/*.gif$", "/*.svg$", "/*.ico$", "/*.webp$", "/*.pdf$"],
+      },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
   }
