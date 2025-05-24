@@ -1,14 +1,19 @@
 "use client"
 
 import { useEffect } from "react"
-import { redirect } from "next/navigation"
+import { useRouter } from "next/navigation"
 
 export default function AdminDashboardPage() {
-  useEffect(() => {
-    // Redirect dashboard page to posts page
-    redirect("/admin/dashboard/posts")
-  }, [])
+  const router = useRouter()
 
-  // This won't render, but just in case
-  return <div>Redirecting to posts...</div>
+  useEffect(() => {
+    // Client-side navigation kullan
+    router.push("/admin/dashboard/posts")
+  }, [router])
+
+  return (
+    <div className="flex items-center justify-center min-h-[200px]">
+      <div className="text-lg">Redirecting to posts...</div>
+    </div>
+  )
 }

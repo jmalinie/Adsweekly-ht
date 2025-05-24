@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AdminHeader } from "@/components/admin-header"
-import { AdminSidebar } from "@/components/admin-sidebar"
 import { Button } from "@/components/ui/button"
 import { Plus, MoreHorizontal, Edit, Trash } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -35,10 +33,10 @@ export default function UsersPage() {
 
         setUsers(data || [])
       } catch (error) {
-        console.error("Kullanıcı getirme hatası:", error)
+        console.error("User fetch error:", error)
         toast({
-          title: "Hata",
-          description: "Kullanıcılar yüklenirken bir hata oluştu.",
+          title: "Error",
+          description: "An error occurred while loading users.",
           variant: "destructive",
         })
       } finally {
@@ -50,107 +48,101 @@ export default function UsersPage() {
   }, [])
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      <AdminSidebar />
-      <div className="flex flex-col flex-1">
-        <AdminHeader />
-        <main className="flex-1 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Kullanıcılar</h1>
-            <Button disabled>
-              <Plus className="mr-2 h-4 w-4" />
-              Yeni Kullanıcı
-            </Button>
-          </div>
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Users</h1>
+        <Button disabled>
+          <Plus className="mr-2 h-4 w-4" />
+          New User
+        </Button>
+      </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            {isLoading ? (
-              <div className="p-8 text-center">
-                <p>Yükleniyor...</p>
-              </div>
-            ) : users.length === 0 ? (
-              <div className="p-8 text-center">
-                <p>Henüz kullanıcı bulunmamaktadır.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b dark:border-gray-700">
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Kullanıcı Adı
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        E-posta
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Ad Soyad
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Rol
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Kayıt Tarihi
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        İşlemler
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {users.map((user) => (
-                      <tr key={user.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium">{user.username}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{user.full_name || "-"}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              user.is_admin
-                                ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
-                                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                            }`}
-                          >
-                            {user.is_admin ? "Admin" : "Kullanıcı"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{formatDate(user.created_at)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">İşlemler</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem disabled>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Düzenle
-                              </DropdownMenuItem>
-                              <DropdownMenuItem disabled>
-                                <Trash className="mr-2 h-4 w-4" />
-                                Sil
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        {isLoading ? (
+          <div className="p-8 text-center">
+            <p>Loading...</p>
           </div>
-        </main>
+        ) : users.length === 0 ? (
+          <div className="p-8 text-center">
+            <p>No users found yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b dark:border-gray-700">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Username
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Full Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Registration Date
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium">{user.username}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{user.full_name || "-"}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.is_admin
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                        }`}
+                      >
+                        {user.is_admin ? "Admin" : "User"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{formatDate(user.created_at)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem disabled>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem disabled>
+                            <Trash className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )
