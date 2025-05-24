@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { AdminHeader } from "@/components/admin-header"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { RichTextEditor } from "@/components/rich-text-editor"
-import { ImageUploader } from "@/components/image-uploader"
 import { createPost, getCategories } from "@/app/actions/post-actions"
 import { toast } from "@/hooks/use-toast"
 
@@ -32,7 +31,6 @@ export default function NewPostPage() {
   const [content, setContent] = useState("")
   const [excerpt, setExcerpt] = useState("")
   const [status, setStatus] = useState("draft")
-  const [featuredImage, setFeaturedImage] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -57,10 +55,6 @@ export default function NewPostPage() {
       formData.append("excerpt", excerpt)
       formData.append("status", status)
 
-      if (featuredImage) {
-        formData.append("featuredImage", featuredImage)
-      }
-
       selectedCategories.forEach((categoryId) => {
         formData.append("categories", categoryId)
       })
@@ -76,7 +70,8 @@ export default function NewPostPage() {
       } else {
         toast({
           title: "Başarılı",
-          description: "Blog yazısı başarıyla oluşturuldu.",
+          description:
+            "Blog yazısı başarıyla oluşturuldu. Öne çıkan görsel yazınızdaki ilk görsel olarak otomatik seçildi.",
         })
         router.push("/admin/dashboard")
       }
@@ -144,36 +139,10 @@ export default function NewPostPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Öne Çıkan Görsel</Label>
-              <p className="text-sm text-muted-foreground">
-                Öne çıkan görsel seçmezseniz, yazınızdaki ilk görsel otomatik olarak kullanılacaktır.
-              </p>
-              {featuredImage ? (
-                <div className="relative mt-2 mb-4">
-                  <img
-                    src={featuredImage || "/placeholder.svg"}
-                    alt="Öne çıkan görsel"
-                    className="w-full max-h-64 object-cover rounded-md"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => setFeaturedImage("")}
-                  >
-                    Kaldır
-                  </Button>
-                </div>
-              ) : (
-                <div className="mt-2">
-                  <ImageUploader onImageUploaded={setFeaturedImage} />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="content">İçerik</Label>
+              <div className="text-sm text-muted-foreground mb-2">
+                💡 İpucu: Yazınızdaki ilk görsel otomatik olarak öne çıkan görsel olarak kullanılacaktır.
+              </div>
               <RichTextEditor initialValue={content} onChange={setContent} />
             </div>
 

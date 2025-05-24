@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { AdminHeader } from "@/components/admin-header"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { RichTextEditor } from "@/components/rich-text-editor"
-import { ImageUploader } from "@/components/image-uploader"
 import { getPostById, updatePost, getCategories } from "@/app/actions/post-actions"
 import { toast } from "@/hooks/use-toast"
 
@@ -38,7 +37,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [content, setContent] = useState("")
   const [excerpt, setExcerpt] = useState("")
   const [status, setStatus] = useState("draft")
-  const [featuredImage, setFeaturedImage] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -63,7 +61,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         setContent(post.content)
         setExcerpt(post.excerpt || "")
         setStatus(post.status)
-        setFeaturedImage(post.featured_image || "")
         setCategories(categoriesData)
 
         // Seçili kategorileri ayarla
@@ -95,10 +92,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       formData.append("excerpt", excerpt)
       formData.append("status", status)
 
-      if (featuredImage) {
-        formData.append("featuredImage", featuredImage)
-      }
-
       selectedCategories.forEach((categoryId) => {
         formData.append("categories", categoryId)
       })
@@ -114,7 +107,8 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       } else {
         toast({
           title: "Başarılı",
-          description: "Blog yazısı başarıyla güncellendi.",
+          description:
+            "Blog yazısı başarıyla güncellendi. Öne çıkan görsel yazınızdaki ilk görsel olarak otomatik güncellendi.",
         })
         router.push("/admin/dashboard")
       }
@@ -198,38 +192,11 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               />
             </div>
 
-            {/* Öne çıkan görsel bölümünü güncelle */}
-            <div className="space-y-2">
-              <Label>Öne Çıkan Görsel</Label>
-              <p className="text-sm text-muted-foreground">
-                Öne çıkan görsel seçmezseniz, yazınızdaki ilk görsel otomatik olarak kullanılacaktır.
-              </p>
-              {featuredImage ? (
-                <div className="relative mt-2 mb-4">
-                  <img
-                    src={featuredImage || "/placeholder.svg"}
-                    alt="Öne çıkan görsel"
-                    className="w-full max-h-64 object-cover rounded-md"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2"
-                    onClick={() => setFeaturedImage("")}
-                  >
-                    Kaldır
-                  </Button>
-                </div>
-              ) : (
-                <div className="mt-2">
-                  <ImageUploader onImageUploaded={setFeaturedImage} />
-                </div>
-              )}
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="content">İçerik</Label>
+              <div className="text-sm text-muted-foreground mb-2">
+                💡 İpucu: Yazınızdaki ilk görsel otomatik olarak öne çıkan görsel olarak kullanılacaktır.
+              </div>
               <RichTextEditor initialValue={content} onChange={setContent} />
             </div>
 
