@@ -17,85 +17,12 @@ interface BlogPostPageProps {
   }
 }
 
-// Dosya uzantılarını kontrol eden yardımcı fonksiyon - Genişletilmiş versiyon
-function hasFileExtension(slug: string): boolean {
-  // Yaygın dosya uzantılarını kontrol et
-  const fileExtensions = [
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".gif",
-    ".svg",
-    ".webp",
-    ".ico",
-    ".bmp",
-    ".tiff",
-    ".pdf",
-    ".doc",
-    ".docx",
-    ".xls",
-    ".xlsx",
-    ".ppt",
-    ".pptx",
-    ".mp3",
-    ".mp4",
-    ".avi",
-    ".mov",
-    ".wmv",
-    ".flv",
-    ".wav",
-    ".zip",
-    ".rar",
-    ".tar",
-    ".gz",
-    ".7z",
-    ".html",
-    ".htm",
-    ".css",
-    ".js",
-    ".json",
-    ".xml",
-    ".txt",
-    ".woff",
-    ".woff2",
-    ".ttf",
-    ".eot",
-    ".otf",
-    ".webmanifest",
-  ]
-
-  // Dosya uzantısı kontrolü
-  const hasExtension = fileExtensions.some((ext) => slug.toLowerCase().endsWith(ext))
-
-  // Nokta içeren ve muhtemelen dosya olan slug'ları kontrol et
-  const isDotFile = slug.includes(".") && /\.[a-zA-Z0-9]{1,6}$/.test(slug)
-
-  return hasExtension || isDotFile
-}
-
-// Favicon ve yaygın statik dosya isimlerini kontrol eden fonksiyon
-function isCommonStaticFile(slug: string): boolean {
-  const commonFiles = [
-    "favicon",
-    "icon",
-    "apple-icon",
-    "apple-touch-icon",
-    "android-icon",
-    "site.webmanifest",
-    "robots.txt",
-    "sitemap.xml",
-    "manifest",
-    "browserconfig",
-    "og-image",
-    "og-home",
-    "twitter-image",
-    "opengraph-image",
-  ]
-
-  // Tam eşleşme kontrolü
-  const exactMatches = [
-    "apple-icon.png",
+// Statik dosya kontrolü
+function isStaticFile(slug: string): boolean {
+  // Bilinen statik dosyalar
+  const staticFiles = [
     "favicon.ico",
+    "apple-icon.png",
     "icon.png",
     "apple-touch-icon.png",
     "apple-touch-icon-precomposed.png",
@@ -106,28 +33,50 @@ function isCommonStaticFile(slug: string): boolean {
     "sitemap.xml",
     "og-home.png",
     "og-image.png",
+    "manifest.json",
   ]
 
-  return commonFiles.some((file) => slug.toLowerCase().includes(file)) || exactMatches.some((file) => slug === file)
+  // Dosya uzantıları
+  const fileExtensions = [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".ico",
+    ".webp",
+    ".webmanifest",
+    ".xml",
+    ".txt",
+    ".json",
+  ]
+
+  // Tam eşleşme kontrolü
+  if (staticFiles.includes(slug)) {
+    return true
+  }
+
+  // Uzantı kontrolü
+  return fileExtensions.some((ext) => slug.endsWith(ext))
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  // Statik dosya kontrolü
+  if (isStaticFile(params.slug)) {
+    console.log(`[BlogPostPage] Slug is a static file: ${params.slug}`)
+    return notFound()
+  }
+
   try {
-    // Validate slug format - dosya uzantısı kontrolü
+    // Slug kontrolü
     if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "") {
       console.error(`Invalid slug: "${params.slug}"`)
       return notFound()
     }
 
-    // Dosya uzantısı kontrolü
-    if (hasFileExtension(params.slug)) {
-      console.error(`Slug appears to be a file: "${params.slug}"`)
-      return notFound()
-    }
-
-    // Yaygın statik dosya kontrolü
-    if (isCommonStaticFile(params.slug)) {
-      console.error(`Slug appears to be a common static file: "${params.slug}"`)
+    // Nokta içeren slug'ları reddet (muhtemelen dosya)
+    if (params.slug.includes(".")) {
+      console.error(`Slug contains dots, likely a file: "${params.slug}"`)
       return notFound()
     }
 
@@ -244,7 +193,7 @@ export async function generateStaticParams() {
     return posts
       .filter((post) => {
         // Slug'ın geçerli olup olmadığını kontrol et
-        return post.slug && !post.slug.includes(".") && !hasFileExtension(post.slug) && !isCommonStaticFile(post.slug)
+        return post.slug && !post.slug.includes(".") && !isStaticFile(post.slug)
       })
       .map((post) => ({
         slug: post.slug,
@@ -258,13 +207,15 @@ export async function generateStaticParams() {
 // Generate metadata
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   try {
+    // Statik dosya kontrolü
+    if (isStaticFile(params.slug)) {
+      return {
+        title: "Not Found",
+      }
+    }
+
     // Validate slug
-    if (
-      !params.slug ||
-      typeof params.slug !== "string" ||
-      hasFileExtension(params.slug) ||
-      isCommonStaticFile(params.slug)
-    ) {
+    if (!params.slug || typeof params.slug !== "string" || params.slug.includes(".")) {
       return {
         title: "Article Not Found",
       }

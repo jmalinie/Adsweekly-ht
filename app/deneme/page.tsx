@@ -2,12 +2,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function DenemePage() {
+export default function TestPage() {
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-8">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl">Test Sayfası</CardTitle>
+          <CardTitle>Test Sayfası</CardTitle>
           <CardDescription>Bu bir test sayfasıdır</CardDescription>
         </CardHeader>
         <CardContent>

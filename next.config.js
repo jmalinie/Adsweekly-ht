@@ -34,52 +34,6 @@ const nextConfig = {
       },
     ]
   },
-  // Yönlendirmeler ve yeniden yazma kuralları
-  async rewrites() {
-    return [
-      // Statik dosyaları public klasörüne yönlendir
-      {
-        source: "/favicon.ico",
-        destination: "/favicon.ico",
-      },
-      {
-        source: "/icon.png",
-        destination: "/icon.png",
-      },
-      {
-        source: "/apple-icon.png",
-        destination: "/apple-icon.png",
-      },
-      {
-        source: "/apple-touch-icon.png",
-        destination: "/apple-icon.png",
-      },
-      {
-        source: "/apple-touch-icon-precomposed.png",
-        destination: "/apple-icon.png",
-      },
-      {
-        source: "/favicon-16x16.png",
-        destination: "/favicon-16x16.png",
-      },
-      {
-        source: "/favicon-32x32.png",
-        destination: "/favicon-32x32.png",
-      },
-      {
-        source: "/site.webmanifest",
-        destination: "/site.webmanifest",
-      },
-      {
-        source: "/og-home.png",
-        destination: "/og-home.png",
-      },
-      {
-        source: "/og-image.png",
-        destination: "/og-image.png",
-      },
-    ]
-  },
 }
 
 module.exports = nextConfig
