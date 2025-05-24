@@ -34,44 +34,49 @@ const nextConfig = {
       },
     ]
   },
-  // Yönlendirmeler
-  async redirects() {
+  // Yönlendirmeler ve yeniden yazma kuralları
+  async rewrites() {
     return [
-      // Favicon ve diğer yaygın statik dosyaları public klasörüne yönlendir
+      // Statik dosyaları public klasörüne yönlendir
       {
         source: "/favicon.ico",
         destination: "/favicon.ico",
-        permanent: true,
       },
       {
         source: "/icon.png",
         destination: "/icon.png",
-        permanent: true,
+      },
+      {
+        source: "/apple-icon.png",
+        destination: "/apple-icon.png",
       },
       {
         source: "/apple-touch-icon.png",
         destination: "/apple-icon.png",
-        permanent: true,
       },
       {
         source: "/apple-touch-icon-precomposed.png",
         destination: "/apple-icon.png",
-        permanent: true,
       },
       {
         source: "/favicon-16x16.png",
         destination: "/favicon-16x16.png",
-        permanent: true,
       },
       {
         source: "/favicon-32x32.png",
         destination: "/favicon-32x32.png",
-        permanent: true,
       },
       {
         source: "/site.webmanifest",
         destination: "/site.webmanifest",
-        permanent: true,
+      },
+      {
+        source: "/og-home.png",
+        destination: "/og-home.png",
+      },
+      {
+        source: "/og-image.png",
+        destination: "/og-image.png",
       },
     ]
   },

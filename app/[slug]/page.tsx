@@ -92,7 +92,23 @@ function isCommonStaticFile(slug: string): boolean {
     "opengraph-image",
   ]
 
-  return commonFiles.some((file) => slug.toLowerCase().includes(file))
+  // Tam eşleşme kontrolü
+  const exactMatches = [
+    "apple-icon.png",
+    "favicon.ico",
+    "icon.png",
+    "apple-touch-icon.png",
+    "apple-touch-icon-precomposed.png",
+    "favicon-16x16.png",
+    "favicon-32x32.png",
+    "site.webmanifest",
+    "robots.txt",
+    "sitemap.xml",
+    "og-home.png",
+    "og-image.png",
+  ]
+
+  return commonFiles.some((file) => slug.toLowerCase().includes(file)) || exactMatches.some((file) => slug === file)
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
