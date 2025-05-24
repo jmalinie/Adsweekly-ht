@@ -36,34 +36,24 @@ function isStaticFile(slug: string): boolean {
     "manifest.json",
   ]
 
-  // Dosya uzantıları
-  const fileExtensions = [
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".gif",
-    ".svg",
-    ".ico",
-    ".webp",
-    ".webmanifest",
-    ".xml",
-    ".txt",
-    ".json",
-  ]
-
   // Tam eşleşme kontrolü
   if (staticFiles.includes(slug)) {
+    console.log(`[BlogPostPage] Slug is a static file: ${slug}`)
     return true
   }
 
-  // Uzantı kontrolü
-  return fileExtensions.some((ext) => slug.endsWith(ext))
+  // Nokta içeren slug'ları kontrol et (muhtemelen dosya)
+  if (slug.includes(".")) {
+    console.log(`[BlogPostPage] Slug contains dots, likely a file: ${slug}`)
+    return true
+  }
+
+  return false
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   // Statik dosya kontrolü
   if (isStaticFile(params.slug)) {
-    console.log(`[BlogPostPage] Slug is a static file: ${params.slug}`)
     return notFound()
   }
 
@@ -71,12 +61,6 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     // Slug kontrolü
     if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "") {
       console.error(`Invalid slug: "${params.slug}"`)
-      return notFound()
-    }
-
-    // Nokta içeren slug'ları reddet (muhtemelen dosya)
-    if (params.slug.includes(".")) {
-      console.error(`Slug contains dots, likely a file: "${params.slug}"`)
       return notFound()
     }
 
@@ -193,7 +177,7 @@ export async function generateStaticParams() {
     return posts
       .filter((post) => {
         // Slug'ın geçerli olup olmadığını kontrol et
-        return post.slug && !post.slug.includes(".") && !isStaticFile(post.slug)
+        return post.slug && !isStaticFile(post.slug)
       })
       .map((post) => ({
         slug: post.slug,
@@ -215,7 +199,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     }
 
     // Validate slug
-    if (!params.slug || typeof params.slug !== "string" || params.slug.includes(".")) {
+    if (!params.slug || typeof params.slug !== "string") {
       return {
         title: "Article Not Found",
       }
