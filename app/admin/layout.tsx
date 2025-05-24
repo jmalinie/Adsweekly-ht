@@ -1,13 +1,12 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/admin-header"
 
-export default function AdminDashboardLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
@@ -15,8 +14,15 @@ export default function AdminDashboardLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
+    // Login sayfasında layout gösterme
+    if (pathname === "/admin") {
+      setIsLoading(false)
+      return
+    }
+
     // Basit cookie kontrolü
     const isLoggedIn = document.cookie.includes("admin_logged_in=true")
 
@@ -27,7 +33,12 @@ export default function AdminDashboardLayout({
     }
 
     setIsLoading(false)
-  }, [router])
+  }, [router, pathname])
+
+  // Login sayfası için layout yok
+  if (pathname === "/admin") {
+    return <>{children}</>
+  }
 
   if (isLoading) {
     return (
