@@ -172,7 +172,7 @@ export async function requireAdmin(): Promise<User> {
   }
 }
 
-// Login/Logout
+// Login/Logout - FIXED VERSION
 export async function login(
   username: string,
   password: string,
@@ -184,21 +184,36 @@ export async function login(
   const supabase = createClient()
 
   try {
-    // Get user by username or email
-    const { data: user, error: userError } = await supabase
+    console.log("Attempting login for:", username)
+
+    // FIXED: Proper SQL query format
+    const { data: users, error: userError } = await supabase
       .from("users")
       .select("id, username, email, password_hash, is_admin")
-      .or(`username.eq.${username},email.eq.${username}`)
-      .single()
+      .or(`username.eq."${username}",email.eq."${username}"`)
 
-    if (userError || !user) {
+    console.log("Query result:", { users, userError })
+
+    if (userError) {
+      console.error("Database query error:", userError)
+      return { success: false, error: "Database error occurred" }
+    }
+
+    if (!users || users.length === 0) {
+      console.log("No user found for:", username)
       return { success: false, error: "Invalid username or password" }
     }
 
+    const user = users[0]
+    console.log("Found user:", { id: user.id, username: user.username, email: user.email })
+
     // Verify password
+    console.log("Verifying password...")
     const isValidPassword = await verifyPassword(password, user.password_hash)
+    console.log("Password verification result:", isValidPassword)
 
     if (!isValidPassword) {
+      console.log("Password verification failed")
       return { success: false, error: "Invalid username or password" }
     }
 
@@ -206,7 +221,9 @@ export async function login(
     await supabase.from("users").update({ last_login_at: new Date().toISOString() }).eq("id", user.id)
 
     // Create session
+    console.log("Creating session for user:", user.id)
     const token = await createSession(user.id)
+    console.log("Session created successfully")
 
     return { success: true, token }
   } catch (error) {
@@ -230,9 +247,6 @@ export async function logout(): Promise<void> {
 
 // Utility functions
 function generateSecureToken(): string {
-  // Node.js ortamında crypto.getRandomValues kullanılabilir
-  // Tarayıcı ortamında window.crypto.getRandomValues kullanılabilir
-  // Her iki ortamda da çalışacak bir çözüm:
   const array = new Uint8Array(32)
 
   if (typeof window !== "undefined" && window.crypto) {
