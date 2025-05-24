@@ -1,31 +1,24 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function TestPage() {
+export default function DenemePage() {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle>Test Sayfası</CardTitle>
-          <CardDescription>Bu bir test sayfasıdır</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4">
-            Bu sayfa, uygulamanın doğru çalıştığını test etmek için oluşturulmuştur. Eğer bu sayfayı görüyorsanız,
-            uygulama düzgün çalışıyor demektir.
-          </p>
-          <p>
-            Statik dosya yönlendirme ve blog post slug'larının doğru işlenmesi için yapılan düzeltmeler başarıyla
-            uygulanmıştır.
-          </p>
-        </CardContent>
-        <CardFooter>
-          <Link href="/" passHref>
-            <Button>Ana Sayfaya Dön</Button>
-          </Link>
-        </CardFooter>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center space-y-6 p-8 max-w-md">
+        <h1 className="text-3xl font-bold">Test Sayfası</h1>
+        <p className="text-gray-600">Bu bir test sayfasıdır</p>
+        <p className="text-sm text-gray-500">
+          Bu sayfa, uygulamanın doğru çalıştığını test etmek için oluşturulmuştur. Eğer bu sayfayı görüyorsanız,
+          uygulama düzgün çalışıyor demektir.
+        </p>
+        <p className="text-sm text-gray-500">
+          Statik dosya yönlendirme ve blog post slug'larının doğru işlenmesi için yapılan düzeltmeler başarıyla
+          uygulanmıştır.
+        </p>
+        <Link href="/">
+          <Button>Ana Sayfaya Dön</Button>
+        </Link>
+      </div>
     </div>
   )
 }

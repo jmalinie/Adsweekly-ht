@@ -4,6 +4,8 @@ import type { NextRequest } from "next/server"
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  console.log(`[Middleware] Processing request for: ${pathname}`)
+
   // Statik dosya uzantılarını kontrol et
   const staticExtensions = [
     ".png",
@@ -44,8 +46,9 @@ export function middleware(request: NextRequest) {
 
   // Statik dosya kontrolü
   if (staticExtensions.some((ext) => pathname.endsWith(ext)) || staticFiles.includes(pathname)) {
-    // Statik dosyalar için 404 döndür
-    return new NextResponse(null, { status: 404 })
+    console.log(`[Middleware] Static file detected: ${pathname}`)
+    // Statik dosyalar için doğrudan devam et
+    return NextResponse.next()
   }
 
   // API routes, Next.js internal routes ve diğer özel route'lar
@@ -55,7 +58,8 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/stores") ||
     pathname.startsWith("/category") ||
-    pathname.startsWith("/deneme")
+    pathname.startsWith("/deneme") ||
+    pathname.startsWith("/coming-soon")
   ) {
     return NextResponse.next()
   }
