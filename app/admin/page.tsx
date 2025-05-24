@@ -32,16 +32,19 @@ export default function AdminLoginPage() {
       formData.append("username", username)
       formData.append("password", password)
 
+      console.log("Submitting login form:", { username })
       const result = await loginAction(formData)
+      console.log("Login result:", result)
 
       if (result?.error) {
         setError(result.error)
-      } else {
+      } else if (result?.success) {
         router.push("/admin/dashboard")
+        router.refresh()
       }
     } catch (err) {
+      console.error("Login error:", err)
       setError("An error occurred during login")
-      console.error(err)
     } finally {
       setLoading(false)
     }

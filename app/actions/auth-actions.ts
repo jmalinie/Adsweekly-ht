@@ -2,7 +2,13 @@
 
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { login as authLogin, logout as authLogout, createPasswordResetToken, resetPassword } from "@/lib/auth"
+import {
+  login as authLogin,
+  logout as authLogout,
+  createPasswordResetToken,
+  resetPassword,
+  getCurrentUser as getUser,
+} from "@/lib/auth"
 
 export async function loginAction(formData: FormData) {
   const username = formData.get("username") as string
@@ -13,7 +19,9 @@ export async function loginAction(formData: FormData) {
   }
 
   try {
+    console.log("Login action started for:", username)
     const result = await authLogin(username, password)
+    console.log("Login result:", result)
 
     if (result.success && result.token) {
       // Set session cookie
@@ -26,7 +34,6 @@ export async function loginAction(formData: FormData) {
         path: "/",
       })
 
-      redirect("/admin/dashboard")
       return { success: true }
     }
 
@@ -114,7 +121,7 @@ export async function resetPasswordAction(formData: FormData) {
 
 export async function getCurrentUser() {
   try {
-    const user = await getCurrentUser()
+    const user = await getUser()
     return user
   } catch (error) {
     console.error("Get current user error:", error)

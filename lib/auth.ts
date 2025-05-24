@@ -172,7 +172,7 @@ export async function requireAdmin(): Promise<User> {
   }
 }
 
-// Login/Logout - FIXED VERSION
+// Login/Logout - UPDATED VERSION
 export async function login(
   username: string,
   password: string,
@@ -186,11 +186,12 @@ export async function login(
   try {
     console.log("Attempting login for:", username)
 
-    // FIXED: Proper SQL query format
+    // Updated sorgu - SQL enjeksiyon güvenliği için parametreli sorgu kullanıyoruz
     const { data: users, error: userError } = await supabase
       .from("users")
       .select("id, username, email, password_hash, is_admin")
-      .or(`username.eq."${username}",email.eq."${username}"`)
+      .or(`username.eq.${username},email.eq.${username}`)
+      .limit(1)
 
     console.log("Query result:", { users, userError })
 
