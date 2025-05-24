@@ -44,6 +44,9 @@ export async function loginAction(formData: FormData) {
   }
 }
 
+// Add the login export that's being imported elsewhere
+export const login = loginAction
+
 export async function logoutAction() {
   try {
     const cookieStore = cookies()

@@ -86,6 +86,10 @@ function isCommonStaticFile(slug: string): boolean {
     "sitemap.xml",
     "manifest",
     "browserconfig",
+    "og-image",
+    "og-home",
+    "twitter-image",
+    "opengraph-image",
   ]
 
   return commonFiles.some((file) => slug.toLowerCase().includes(file))
