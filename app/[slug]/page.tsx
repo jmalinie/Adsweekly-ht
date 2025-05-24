@@ -10,6 +10,7 @@ import { getPostBySlug, getStaticPublishedPosts } from "@/app/actions/post-actio
 import { formatDate } from "@/lib/utils"
 
 export const revalidate = 3600 // 1 hour ISR
+export const dynamicParams = false // Sadece generateStaticParams'dan gelen slug'ları kabul et
 
 interface BlogPostPageProps {
   params: {
@@ -17,53 +18,14 @@ interface BlogPostPageProps {
   }
 }
 
-// Statik dosya kontrolü
-function isStaticFile(slug: string): boolean {
-  // Bilinen statik dosyalar
-  const staticFiles = [
-    "favicon.ico",
-    "apple-icon.png",
-    "icon.png",
-    "apple-touch-icon.png",
-    "apple-touch-icon-precomposed.png",
-    "favicon-16x16.png",
-    "favicon-32x32.png",
-    "site.webmanifest",
-    "robots.txt",
-    "sitemap.xml",
-    "og-home.png",
-    "og-image.png",
-    "manifest.json",
-  ]
-
-  // Tam eşleşme kontrolü
-  if (staticFiles.includes(slug)) {
-    console.log(`[BlogPostPage] Slug is a static file: ${slug}`)
-    return true
-  }
-
-  // Nokta içeren slug'ları kontrol et (muhtemelen dosya)
-  if (slug.includes(".")) {
-    console.log(`[BlogPostPage] Slug contains dots, likely a file: ${slug}`)
-    return true
-  }
-
-  return false
-}
-
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  // Statik dosya kontrolü
-  if (isStaticFile(params.slug)) {
+  // Params kontrolü
+  if (!params || !params.slug) {
+    console.error("No params or slug provided")
     return notFound()
   }
 
   try {
-    // Slug kontrolü
-    if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "") {
-      console.error(`Invalid slug: "${params.slug}"`)
-      return notFound()
-    }
-
     const post = await getPostBySlug(params.slug)
 
     if (!post) {
@@ -77,27 +39,29 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     }
 
     const postDate = formatDate(post.published_at || post.created_at)
-    // Kategori verilerini güvenli bir şekilde işleyelim
-    const categories = post.post_categories ? post.post_categories.map((pc) => pc.categories).filter(Boolean) : []
 
-    // Get the primary category (first one)
+    // Kategori verilerini güvenli bir şekilde işleyelim - default değerlerle
+    const categories = post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
     const primaryCategory = categories.length > 0 ? categories[0] : null
 
     // JSON-LD structured data for SEO
     const jsonLd = {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      headline: post.title,
-      description: post.excerpt || post.title,
+      headline: post.title || "Untitled",
+      description: post.excerpt || post.title || "Blog post",
       image: post.featured_image || "/og-image.png",
-      datePublished: post.published_at || post.created_at,
-      dateModified: post.updated_at || post.published_at || post.created_at,
+      datePublished: post.published_at || post.created_at || new Date().toISOString(),
+      dateModified: post.updated_at || post.published_at || post.created_at || new Date().toISOString(),
       mainEntityOfPage: {
         "@type": "WebPage",
         "@id": `/${post.slug}`,
       },
-      articleSection: categories.map((cat) => cat.name),
-      keywords: categories.map((cat) => cat.name).join(", "),
+      articleSection: categories.map((cat) => cat.name || "Uncategorized"),
+      keywords: categories
+        .map((cat) => cat.name || "")
+        .filter(Boolean)
+        .join(", "),
     }
 
     return (
@@ -123,13 +87,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           <article className="max-w-4xl mx-auto">
             <header className="mb-8">
               <h1 className="text-3xl font-bold mb-4" dir="ltr" style={{ direction: "ltr" }}>
-                {post.title}
+                {post.title || "Untitled Post"}
               </h1>
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
                 <div className="flex items-center">
                   <Calendar className="mr-1 h-4 w-4" />
-                  <time dateTime={post.published_at || post.created_at}>{postDate}</time>
+                  <time dateTime={post.published_at || post.created_at || new Date().toISOString()}>{postDate}</time>
                 </div>
                 {categories.length > 0 && (
                   <div className="flex items-center flex-wrap gap-2">
@@ -141,10 +105,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 )}
               </div>
 
-              {post.featured_image && <BlogPostClient.FeaturedImage src={post.featured_image} alt={post.title} />}
+              {post.featured_image && (
+                <BlogPostClient.FeaturedImage src={post.featured_image} alt={post.title || "Featured image"} />
+              )}
             </header>
 
-            <BlogPostClient.Content content={post.content} />
+            <BlogPostClient.Content content={post.content || ""} />
 
             {/* Related Categories */}
             {categories.length > 0 && (
@@ -163,21 +129,42 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     )
   } catch (error) {
     console.error("Error rendering blog post:", error)
-    // Don't throw the error, just return notFound
     return notFound()
   }
 }
 
-// generateStaticParams fonksiyonunu güncelle
+// generateStaticParams - sadece geçerli blog post slug'larını döndür
 export async function generateStaticParams() {
   try {
     const posts = await getStaticPublishedPosts()
 
-    // Sadece geçerli slug'ları döndür
+    // Sadece geçerli slug'ları döndür - statik dosyaları hariç tut
     return posts
       .filter((post) => {
-        // Slug'ın geçerli olup olmadığını kontrol et
-        return post.slug && !isStaticFile(post.slug)
+        // Slug kontrolü
+        if (!post.slug) return false
+
+        // Nokta içeren slug'ları hariç tut (dosya uzantısı)
+        if (post.slug.includes(".")) return false
+
+        // Bilinen statik dosya isimlerini hariç tut
+        const staticFiles = [
+          "favicon",
+          "icon",
+          "apple-icon",
+          "apple-touch-icon",
+          "robots",
+          "sitemap",
+          "manifest",
+          "og-image",
+          "og-home",
+        ]
+
+        if (staticFiles.some((file) => post.slug.toLowerCase().includes(file))) {
+          return false
+        }
+
+        return true
       })
       .map((post) => ({
         slug: post.slug,
@@ -190,39 +177,36 @@ export async function generateStaticParams() {
 
 // Generate metadata
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  try {
-    // Statik dosya kontrolü
-    if (isStaticFile(params.slug)) {
-      return {
-        title: "Not Found",
-      }
-    }
+  // Default metadata
+  const defaultMetadata: Metadata = {
+    title: "Article Not Found",
+    description: "The requested article could not be found.",
+  }
 
-    // Validate slug
-    if (!params.slug || typeof params.slug !== "string") {
-      return {
-        title: "Article Not Found",
-      }
+  try {
+    // Params kontrolü
+    if (!params || !params.slug) {
+      return defaultMetadata
     }
 
     const post = await getPostBySlug(params.slug)
 
     if (!post) {
-      return {
-        title: "Article Not Found",
-      }
+      return defaultMetadata
     }
 
-    const categories = post.post_categories ? post.post_categories.map((pc) => pc.categories).filter(Boolean) : []
+    const categories = post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
 
     return {
-      title: post.title,
-      description:
-        post.excerpt || `Read ${post.title} on Modern Blog. Latest insights about technology and software development.`,
-      keywords: categories.map((cat) => cat.name).join(", "),
+      title: post.title || "Untitled Post",
+      description: post.excerpt || `Read ${post.title || "this article"} on Modern Blog.`,
+      keywords: categories
+        .map((cat) => cat.name || "")
+        .filter(Boolean)
+        .join(", "),
       openGraph: {
-        title: post.title,
-        description: post.excerpt || post.title,
+        title: post.title || "Untitled Post",
+        description: post.excerpt || post.title || "Blog post",
         type: "article",
         url: `/${post.slug}`,
         images: [
@@ -230,18 +214,18 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
             url: post.featured_image || "/og-image.png",
             width: 1200,
             height: 630,
-            alt: post.title,
+            alt: post.title || "Blog post image",
           },
         ],
         publishedTime: post.published_at || post.created_at,
         modifiedTime: post.updated_at || post.published_at || post.created_at,
-        section: categories.length > 0 ? categories[0].name : "Technology",
-        tags: categories.map((cat) => cat.name),
+        section: categories.length > 0 ? categories[0].name || "Technology" : "Technology",
+        tags: categories.map((cat) => cat.name || "").filter(Boolean),
       },
       twitter: {
         card: "summary_large_image",
-        title: post.title,
-        description: post.excerpt || post.title,
+        title: post.title || "Untitled Post",
+        description: post.excerpt || post.title || "Blog post",
         images: [post.featured_image || "/og-image.png"],
       },
       alternates: {
@@ -250,9 +234,6 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     }
   } catch (error) {
     console.error("Error generating metadata:", error)
-    return {
-      title: "Article",
-      description: "Read this article on our blog",
-    }
+    return defaultMetadata
   }
 }

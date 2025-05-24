@@ -34,6 +34,34 @@ const nextConfig = {
       },
     ]
   },
+  // Public klasöründeki dosyaları doğru şekilde servis et
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Statik dosyaları public klasöründen servis et
+        {
+          source: "/apple-icon.png",
+          destination: "/apple-icon.png",
+        },
+        {
+          source: "/favicon.ico",
+          destination: "/favicon.ico",
+        },
+        {
+          source: "/icon.png",
+          destination: "/icon.png",
+        },
+        {
+          source: "/og-home.png",
+          destination: "/og-home.png",
+        },
+        {
+          source: "/og-image.png",
+          destination: "/og-image.png",
+        },
+      ],
+    }
+  },
 }
 
 module.exports = nextConfig

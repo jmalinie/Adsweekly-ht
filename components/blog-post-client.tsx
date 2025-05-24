@@ -12,7 +12,7 @@ function FeaturedImage({ src, alt }: FeaturedImageProps) {
     <div className="relative w-full mb-8">
       <Image
         src={src || "/placeholder.svg"}
-        alt={alt}
+        alt={alt || "Featured image"}
         width={1200}
         height={600}
         className="w-full h-auto object-cover rounded-lg"
@@ -34,7 +34,7 @@ function Content({ content }: ContentProps) {
   return (
     <div
       className="blog-content prose max-w-none dark:prose-invert prose-lg"
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: content || "" }}
       dir="ltr"
       style={{
         direction: "ltr",

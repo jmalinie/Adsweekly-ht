@@ -1,27 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-// Statik dosya uzantılarını kontrol eden fonksiyon
-function isStaticFile(pathname: string): boolean {
-  // Bilinen statik dosyalar
-  const staticFiles = [
-    "favicon.ico",
-    "apple-icon.png",
-    "icon.png",
-    "apple-touch-icon.png",
-    "apple-touch-icon-precomposed.png",
-    "favicon-16x16.png",
-    "favicon-32x32.png",
-    "site.webmanifest",
-    "robots.txt",
-    "sitemap.xml",
-    "og-home.png",
-    "og-image.png",
-    "manifest.json",
-  ]
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
 
-  // Dosya uzantıları
-  const fileExtensions = [
+  // Statik dosya uzantılarını kontrol et
+  const staticExtensions = [
     ".png",
     ".jpg",
     ".jpeg",
@@ -33,31 +17,41 @@ function isStaticFile(pathname: string): boolean {
     ".xml",
     ".txt",
     ".json",
+    ".js",
+    ".css",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".eot",
   ]
 
-  // Tam eşleşme kontrolü
-  if (staticFiles.some((file) => pathname === `/${file}`)) {
-    return true
-  }
-
-  // Uzantı kontrolü
-  return fileExtensions.some((ext) => pathname.endsWith(ext))
-}
-
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+  // Bilinen statik dosya isimleri
+  const staticFiles = [
+    "/favicon.ico",
+    "/apple-icon.png",
+    "/icon.png",
+    "/apple-touch-icon.png",
+    "/apple-touch-icon-precomposed.png",
+    "/favicon-16x16.png",
+    "/favicon-32x32.png",
+    "/site.webmanifest",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/og-home.png",
+    "/og-image.png",
+    "/manifest.json",
+  ]
 
   // Statik dosya kontrolü
-  if (isStaticFile(pathname)) {
-    // Statik dosya isteklerini doğrudan public klasörüne yönlendir
-    return NextResponse.next()
+  if (staticExtensions.some((ext) => pathname.endsWith(ext)) || staticFiles.includes(pathname)) {
+    // Statik dosyalar için 404 döndür
+    return new NextResponse(null, { status: 404 })
   }
 
-  // Statik dosyalar ve API route'ları için middleware'i atla
+  // API routes, Next.js internal routes ve diğer özel route'lar
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/static") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/stores") ||
     pathname.startsWith("/category") ||
@@ -66,24 +60,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Nokta içeren tüm istekleri reddet (muhtemelen dosya)
-  if (pathname.includes(".")) {
-    // 404 sayfasına yönlendir
-    return NextResponse.rewrite(new URL("/not-found", request.url))
-  }
-
-  // Diğer tüm istekler blog post olarak işlenecek
+  // Diğer tüm istekler için devam et
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
      */
-    "/((?!_next/static|_next/image).*)",
+    "/((?!_next/static|_next/image|favicon.ico).*)",
   ],
 }
