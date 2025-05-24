@@ -3,7 +3,7 @@ import { ArrowRight, Store } from "lucide-react"
 import type { Metadata } from "next"
 
 import { Button } from "@/components/ui/button"
-import { BlogCard } from "@/components/blog-card";
+import { BlogCard } from "@/components/blog-card"
 import { getPublishedPosts, getFeaturedCategories } from "@/app/actions/post-actions"
 import { OptimizedImage } from "@/components/optimized-image"
 import { getSettingValue } from "@/lib/settings"
@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
         url: "/",
         images: [
           {
-            url: "/og-home.jpg",
+            url: "/og-home.png",
             width: 1200,
             height: 630,
             alt: `${siteTitle} Homepage`,
@@ -41,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
         card: "summary_large_image",
         title: `${siteTitle} - Latest Technology Articles`,
         description: siteDescription,
-        images: ["/og-home.jpg"],
+        images: ["/og-home.png"],
       },
       alternates: {
         canonical: "/",

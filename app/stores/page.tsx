@@ -69,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: "/stores",
       images: [
         {
-          url: "/og-stores.jpg",
+          url: "/og-stores.png",
           width: 1200,
           height: 630,
           alt: "All Stores",
@@ -80,7 +80,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "All Stores - Modern Blog",
       description: "Browse all stores and categories available on our platform.",
-      images: ["/og-stores.jpg"],
+      images: ["/og-stores.png"],
     },
     alternates: {
       canonical: "/stores",

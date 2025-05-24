@@ -17,10 +17,11 @@ interface BlogPostPageProps {
   }
 }
 
+// BlogPostPage fonksiyonunun başına slug validasyonu ekle
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   try {
-    // Validate slug format
-    if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "") {
+    // Validate slug format - dosya uzantısı kontrolü ekle
+    if (!params.slug || typeof params.slug !== "string" || params.slug.trim() === "" || params.slug.includes(".")) {
       console.error(`Invalid slug: "${params.slug}"`)
       return notFound()
     }
@@ -129,14 +130,17 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   }
 }
 
-// Generate static params for all published posts - static generation için
+// generateStaticParams fonksiyonunu güncelle
 export async function generateStaticParams() {
   try {
     const posts = await getStaticPublishedPosts()
 
-    return posts.map((post) => ({
-      slug: post.slug,
-    }))
+    // Sadece geçerli slug'ları döndür
+    return posts
+      .filter((post) => post.slug && !post.slug.includes(".")) // Dosya uzantısı olanları filtrele
+      .map((post) => ({
+        slug: post.slug,
+      }))
   } catch (error) {
     console.error("Error generating static params:", error)
     return []
