@@ -111,3 +111,13 @@ export async function resetPasswordAction(formData: FormData) {
     return { error: "An error occurred while resetting your password" }
   }
 }
+
+export async function getCurrentUser() {
+  try {
+    const user = await getCurrentUser()
+    return user
+  } catch (error) {
+    console.error("Get current user error:", error)
+    return null
+  }
+}

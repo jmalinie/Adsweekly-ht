@@ -44,6 +44,11 @@ const nextConfig = {
         permanent: true,
       },
       {
+        source: "/icon.png",
+        destination: "/icon.png",
+        permanent: true,
+      },
+      {
         source: "/apple-touch-icon.png",
         destination: "/apple-icon.png",
         permanent: true,
@@ -55,12 +60,17 @@ const nextConfig = {
       },
       {
         source: "/favicon-16x16.png",
-        destination: "/favicon.ico",
+        destination: "/favicon-16x16.png",
         permanent: true,
       },
       {
         source: "/favicon-32x32.png",
-        destination: "/favicon.ico",
+        destination: "/favicon-32x32.png",
+        permanent: true,
+      },
+      {
+        source: "/site.webmanifest",
+        destination: "/site.webmanifest",
         permanent: true,
       },
     ]

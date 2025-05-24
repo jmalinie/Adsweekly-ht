@@ -13,9 +13,11 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/svg+xml" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
     ],
-    apple: { url: "/apple-icon.png", type: "image/png" },
+    apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
   },
   generator: "v0.dev",
 }
@@ -27,8 +29,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={inter.className}>
+      <head>
+        <link rel="manifest" href="/site.webmanifest" />
+      </head>
+      <body className={inter.className} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           {children}
           <Toaster />

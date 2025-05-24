@@ -17,7 +17,7 @@ interface BlogPostPageProps {
   }
 }
 
-// Dosya uzantılarını kontrol eden yardımcı fonksiyon
+// Dosya uzantılarını kontrol eden yardımcı fonksiyon - Genişletilmiş versiyon
 function hasFileExtension(slug: string): boolean {
   // Yaygın dosya uzantılarını kontrol et
   const fileExtensions = [
@@ -56,9 +56,39 @@ function hasFileExtension(slug: string): boolean {
     ".json",
     ".xml",
     ".txt",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".eot",
+    ".otf",
+    ".webmanifest",
   ]
 
-  return fileExtensions.some((ext) => slug.toLowerCase().endsWith(ext))
+  // Dosya uzantısı kontrolü
+  const hasExtension = fileExtensions.some((ext) => slug.toLowerCase().endsWith(ext))
+
+  // Nokta içeren ve muhtemelen dosya olan slug'ları kontrol et
+  const isDotFile = slug.includes(".") && /\.[a-zA-Z0-9]{1,6}$/.test(slug)
+
+  return hasExtension || isDotFile
+}
+
+// Favicon ve yaygın statik dosya isimlerini kontrol eden fonksiyon
+function isCommonStaticFile(slug: string): boolean {
+  const commonFiles = [
+    "favicon",
+    "icon",
+    "apple-icon",
+    "apple-touch-icon",
+    "android-icon",
+    "site.webmanifest",
+    "robots.txt",
+    "sitemap.xml",
+    "manifest",
+    "browserconfig",
+  ]
+
+  return commonFiles.some((file) => slug.toLowerCase().includes(file))
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
@@ -75,9 +105,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       return notFound()
     }
 
-    // Nokta içeren slug'ları reddet (muhtemelen dosya)
-    if (params.slug.includes(".")) {
-      console.error(`Slug contains dots, likely a file: "${params.slug}"`)
+    // Yaygın statik dosya kontrolü
+    if (isCommonStaticFile(params.slug)) {
+      console.error(`Slug appears to be a common static file: "${params.slug}"`)
       return notFound()
     }
 
@@ -192,7 +222,10 @@ export async function generateStaticParams() {
 
     // Sadece geçerli slug'ları döndür
     return posts
-      .filter((post) => post.slug && !post.slug.includes(".")) // Dosya uzantısı olanları filtrele
+      .filter((post) => {
+        // Slug'ın geçerli olup olmadığını kontrol et
+        return post.slug && !post.slug.includes(".") && !hasFileExtension(post.slug) && !isCommonStaticFile(post.slug)
+      })
       .map((post) => ({
         slug: post.slug,
       }))
@@ -206,7 +239,12 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   try {
     // Validate slug
-    if (!params.slug || typeof params.slug !== "string" || hasFileExtension(params.slug)) {
+    if (
+      !params.slug ||
+      typeof params.slug !== "string" ||
+      hasFileExtension(params.slug) ||
+      isCommonStaticFile(params.slug)
+    ) {
       return {
         title: "Article Not Found",
       }

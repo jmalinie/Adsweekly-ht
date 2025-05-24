@@ -11,33 +11,23 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log the error details for debugging
-    console.error("Application Error:", error)
-    console.error("Error message:", error.message)
-    console.error("Error stack:", error.stack)
-    console.error("Error digest:", error.digest)
+    // Log the error to an error reporting service
+    console.error("Application error:", error)
   }, [error])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-4 p-8">
         <h2 className="text-2xl font-bold">Something went wrong!</h2>
-        <div className="text-sm text-gray-600 max-w-md">
-          <p>
-            <strong>Error:</strong> {error.message}
-          </p>
-          {error.digest && (
-            <p>
-              <strong>Digest:</strong> {error.digest}
-            </p>
-          )}
+        <p className="text-gray-600 max-w-md">
+          We encountered an error while loading this page. Please try again or go back to the admin login.
+        </p>
+        <div className="flex gap-4 justify-center">
+          <Button onClick={() => reset()} variant="outline">
+            Try again
+          </Button>
+          <Button onClick={() => (window.location.href = "/admin")}>Go to Admin Login</Button>
         </div>
-        <Button onClick={() => reset()} variant="outline">
-          Try again
-        </Button>
-        <Button onClick={() => (window.location.href = "/admin")} variant="default">
-          Go to Admin Login
-        </Button>
       </div>
     </div>
   )

@@ -1,19 +1,26 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { loginAction } from "@/app/actions/auth-actions"
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,13 +28,16 @@ export default function AdminLoginPage() {
     setError("")
 
     try {
-      // Simple validation - in a real app, this would be an API call
-      if (username === "admin" && password === "482733") {
-        // Successful login - set cookie
-        document.cookie = "admin_logged_in=true; path=/; max-age=86400" // 24 hours
-        router.push("/admin/dashboard")
+      const formData = new FormData()
+      formData.append("username", username)
+      formData.append("password", password)
+
+      const result = await loginAction(formData)
+
+      if (result?.error) {
+        setError(result.error)
       } else {
-        setError("Invalid username or password")
+        router.push("/admin/dashboard")
       }
     } catch (err) {
       setError("An error occurred during login")
@@ -35,6 +45,11 @@ export default function AdminLoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null
   }
 
   return (
@@ -73,15 +88,22 @@ export default function AdminLoginPage() {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Logging in..." : "Log in"}
-          </Button>
+          <div className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : "Log in"}
+            </Button>
+            <Link href="/admin/forgot-password" className="text-center">
+              <Button variant="link" className="text-sm">
+                Forgot password?
+              </Button>
+            </Link>
+          </div>
         </form>
 
         <div className="pt-4 text-center text-sm text-gray-500 border-t">
           <p>Demo Credentials:</p>
           <p>Username: admin</p>
-          <p>Password: 482733</p>
+          <p>Password: 123456</p>
         </div>
       </div>
     </div>
