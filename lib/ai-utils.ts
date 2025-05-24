@@ -5,18 +5,20 @@ import { openai } from "@ai-sdk/openai"
 
 export async function generateBlogContent(imageUrl: string, prompt: string) {
   try {
-    const systemPrompt = `Sen profesyonel bir blog yazarısın. Verilen görsel ve açıklama doğrultusunda detaylı, SEO dostu ve ilgi çekici blog içeriği oluştur. 
-    Görsel bir ürünü gösteriyorsa, ürünün özelliklerini, faydalarını ve kullanım alanlarını vurgula.
+    const systemPrompt = `Sen profesyonel bir blog yazarısın. Kullanıcının verdiği açıklama doğrultusunda detaylı, SEO dostu ve ilgi çekici blog içeriği oluştur. 
+    Kullanıcı bir görsel URL'si paylaştı, ancak bu görseli doğrudan analiz edemezsin. Bunun yerine, kullanıcının açıklamasına odaklan.
     İçerik Türkçe olmalı ve en az 3 paragraf içermeli.
     Başlık önerisi, giriş paragrafı, ana içerik ve sonuç bölümlerini içermeli.
     HTML formatında yanıt ver, böylece içerik doğrudan blog editörüne eklenebilir.`
 
-    const userPrompt = `Bu görseli analiz et ve hakkında bir blog yazısı oluştur: ${imageUrl}
+    const userPrompt = `Aşağıdaki konu hakkında detaylı bir blog yazısı oluştur:
     
-    Konu hakkında ek bilgi: ${prompt || "Detaylı bir blog yazısı oluştur."}`
+    ${prompt || "Detaylı bir blog yazısı oluştur."}
+    
+    Not: Bir görsel de paylaştım, ancak bu görseli doğrudan analiz edemeyeceğini biliyorum. Lütfen yukarıdaki açıklamaya odaklan.`
 
     const { text } = await generateText({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4o-mini"),
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,
@@ -45,7 +47,7 @@ export async function improveContent(content: string, instruction: string) {
     ${content}`
 
     const { text } = await generateText({
-      model: openai("gpt-4o"),
+      model: openai("gpt-4o-mini"),
       system: systemPrompt,
       prompt: userPrompt,
       temperature: 0.7,

@@ -15,13 +15,13 @@ import {
   Heading3,
   ImageIcon,
   Sparkles,
+  Wand2,
   Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ImageUploader } from "@/components/image-uploader"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { generateBlogContent, improveContent } from "@/lib/ai-utils"
@@ -38,10 +38,11 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
   const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
   const [isAiImproveDialogOpen, setIsAiImproveDialogOpen] = useState(false)
-  const [aiImageUrl, setAiImageUrl] = useState("")
   const [aiPrompt, setAiPrompt] = useState("")
   const [aiImprovePrompt, setAiImprovePrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [contentImages, setContentImages] = useState<string[]>([])
   const editorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -54,11 +55,23 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
     }
   }, [initialValue])
 
+  // İçerikteki görselleri bul
+  useEffect(() => {
+    if (editorRef.current) {
+      const images = Array.from(editorRef.current.querySelectorAll("img")).map((img) => img.src)
+      setContentImages(images)
+    }
+  }, [content])
+
   const handleContentChange = () => {
     if (editorRef.current) {
       const newContent = editorRef.current.innerHTML
       setContent(newContent)
       onChange(newContent)
+
+      // İçerikteki görselleri güncelle
+      const images = Array.from(editorRef.current.querySelectorAll("img")).map((img) => img.src)
+      setContentImages(images)
     }
   }
 
@@ -68,11 +81,27 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
     editorRef.current?.focus()
   }
 
+  // Daha güvenilir içerik ekleme fonksiyonu
+  const insertContent = (htmlContent: string) => {
+    if (editorRef.current) {
+      // Mevcut içeriği al
+      const currentContent = editorRef.current.innerHTML
+
+      // Yeni içeriği ekle
+      editorRef.current.innerHTML = currentContent + htmlContent
+
+      // İçerik değişikliğini bildir
+      handleContentChange()
+
+      // Konsola log ekleyelim (debug için)
+      console.log("İçerik eklendi:", htmlContent)
+      console.log("Güncel içerik:", editorRef.current.innerHTML)
+    }
+  }
+
   const insertImage = (imageUrl: string) => {
-    execCommand(
-      "insertHTML",
-      `<img src="${imageUrl}" alt="Blog görseli" style="max-width: 100%; height: auto; margin: 10px 0;" />`,
-    )
+    const imageHtml = `<img src="${imageUrl}" alt="Blog görseli" style="max-width: 100%; height: auto; margin: 10px 0;" />`
+    insertContent(imageHtml)
   }
 
   const insertLink = () => {
@@ -83,10 +112,10 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
   }
 
   const handleGenerateContent = async () => {
-    if (!aiImageUrl) {
+    if (!aiPrompt) {
       toast({
         title: "Hata",
-        description: "Lütfen bir görsel URL'si girin.",
+        description: "Lütfen bir konu açıklaması girin.",
         variant: "destructive",
       })
       return
@@ -95,12 +124,15 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
     setIsGenerating(true)
 
     try {
-      const result = await generateBlogContent(aiImageUrl, aiPrompt)
+      // Gerçek API çağrısı
+      const result = await generateBlogContent(selectedImage || "", aiPrompt)
 
       if (result.success && result.content) {
-        execCommand("insertHTML", result.content)
+        // İçeriği editöre ekle
+        insertContent(result.content)
+
         setIsAiDialogOpen(false)
-        setAiImageUrl("")
+        setSelectedImage(null)
         setAiPrompt("")
         toast({
           title: "Başarılı",
@@ -150,11 +182,16 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
         return
       }
 
+      // Gerçek API çağrısı
       const result = await improveContent(currentContent, aiImprovePrompt)
 
       if (result.success && result.content) {
-        editorRef.current!.innerHTML = result.content
-        handleContentChange()
+        // Doğrudan innerHTML'i güncelle
+        if (editorRef.current) {
+          editorRef.current.innerHTML = result.content
+          handleContentChange()
+        }
+
         setIsAiImproveDialogOpen(false)
         setAiImprovePrompt("")
         toast({
@@ -250,109 +287,123 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
               </DialogContent>
             </Dialog>
 
-            {/* AI İçerik Oluşturma Butonu */}
-            <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
-              <DialogTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="ml-2 bg-purple-50 dark:bg-purple-900/20">
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>AI ile İçerik Oluştur</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <p className="text-sm text-muted-foreground">
-                    Bir görsel URL'si ve konu hakkında kısa bir açıklama girin. AI, görsel hakkında detaylı bir blog
-                    yazısı oluşturacak.
-                  </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="imageUrl">Görsel URL'si</Label>
-                    <Input
-                      id="imageUrl"
-                      placeholder="https://example.com/image.jpg"
-                      value={aiImageUrl}
-                      onChange={(e) => setAiImageUrl(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="prompt">Konu Açıklaması (İsteğe Bağlı)</Label>
-                    <Textarea
-                      id="prompt"
-                      placeholder="Bu ürün hakkında detaylı bir inceleme yazısı oluştur..."
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      className="min-h-[100px]"
-                    />
-                  </div>
-                  <Button onClick={handleGenerateContent} className="w-full" disabled={isGenerating || !aiImageUrl}>
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        İçerik Oluşturuluyor...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        İçerik Oluştur
-                      </>
-                    )}
+            {/* Belirgin AI Butonları */}
+            <div className="ml-4 flex items-center gap-2">
+              <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-300"
+                  >
+                    <Wand2 className="mr-1 h-4 w-4" />
+                    AI Yazar
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>AI ile İçerik Oluştur</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <p className="text-sm text-muted-foreground">
+                      Konu hakkında detaylı bir açıklama girin. AI, açıklamanıza göre detaylı bir blog yazısı
+                      oluşturacak.
+                    </p>
 
-            {/* AI İçerik İyileştirme Butonu */}
-            <Dialog open={isAiImproveDialogOpen} onOpenChange={setIsAiImproveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button type="button" variant="ghost" className="ml-2 text-xs bg-purple-50 dark:bg-purple-900/20">
-                  <Sparkles className="mr-1 h-3 w-3 text-purple-500" />
-                  İyileştir
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>AI ile İçeriği İyileştir</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <p className="text-sm text-muted-foreground">
-                    Mevcut içeriğinizi nasıl iyileştirmek istediğinizi belirtin. AI, talimatlarınıza göre içeriği
-                    geliştirecek.
-                  </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="improvePrompt">İyileştirme Talimatı</Label>
-                    <Textarea
-                      id="improvePrompt"
-                      placeholder="Daha profesyonel bir dil kullan ve SEO için anahtar kelimeleri ekle..."
-                      value={aiImprovePrompt}
-                      onChange={(e) => setAiImprovePrompt(e.target.value)}
-                      className="min-h-[100px]"
-                    />
+                    <div className="p-4 border rounded-md bg-amber-50 dark:bg-amber-950/20">
+                      <p className="text-sm text-amber-600 dark:text-amber-400">
+                        <strong>Not:</strong> GPT-4o-mini modeli görselleri analiz edemez. Lütfen konu hakkında detaylı
+                        bir açıklama girin.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="prompt">Konu Açıklaması</Label>
+                      <Textarea
+                        id="prompt"
+                        placeholder="Örnek: ALDI marketlerinde satılan yaz ürünleri hakkında bir blog yazısı oluştur. Özellikle havuz oyuncakları, bahçe mobilyaları ve piknik malzemeleri hakkında bilgi ver."
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <Button onClick={handleGenerateContent} className="w-full" disabled={isGenerating || !aiPrompt}>
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          İçerik Oluşturuluyor...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          İçerik Oluştur
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <Button onClick={handleImproveContent} className="w-full" disabled={isGenerating || !aiImprovePrompt}>
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        İçerik İyileştiriliyor...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        İçeriği İyileştir
-                      </>
-                    )}
+                </DialogContent>
+              </Dialog>
+
+              <Dialog open={isAiImproveDialogOpen} onOpenChange={setIsAiImproveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:text-purple-300"
+                  >
+                    <Sparkles className="mr-1 h-4 w-4" />
+                    İyileştir
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>AI ile İçeriği İyileştir</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <p className="text-sm text-muted-foreground">
+                      Mevcut içeriğinizi nasıl iyileştirmek istediğinizi belirtin. AI, talimatlarınıza göre içeriği
+                      geliştirecek.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="improvePrompt">İyileştirme Talimatı</Label>
+                      <Textarea
+                        id="improvePrompt"
+                        placeholder="Daha profesyonel bir dil kullan ve SEO için anahtar kelimeleri ekle..."
+                        value={aiImprovePrompt}
+                        onChange={(e) => setAiImprovePrompt(e.target.value)}
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleImproveContent}
+                      className="w-full"
+                      disabled={isGenerating || !aiImprovePrompt}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          İçerik İyileştiriliyor...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          İçeriği İyileştir
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <div className="p-3 border-b">
             <ImageUploader onImageUploaded={insertImage} multiple={true} />
             <p className="text-xs text-muted-foreground mt-2">
-              İpucu: Öne çıkan görsel seçmezseniz, yazınızdaki ilk görsel otomatik olarak öne çıkan görsel olarak
-              kullanılacaktır. Birden fazla resim seçmek için Ctrl (veya Command) tuşuna basılı tutarak seçim
-              yapabilirsiniz.
+              İpucu: Yazınızdaki ilk görsel otomatik olarak öne çıkan görsel olarak kullanılacaktır. Birden fazla resim
+              seçmek için Ctrl (veya Command) tuşuna basılı tutarak seçim yapabilirsiniz.
             </p>
           </div>
 
