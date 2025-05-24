@@ -1,7 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Lock, User, AlertCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -9,40 +11,32 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { loginAction } from "@/app/actions/auth-actions"
 
 export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const router = useRouter()
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     setIsLoading(true)
     setError("")
 
-    try {
-      // Get form values
-      const username = formData.get("username") as string
-      const password = formData.get("password") as string
+    const formData = new FormData(e.currentTarget)
+    const username = formData.get("username") as string
+    const password = formData.get("password") as string
 
-      if (!username || !password) {
-        setError("Username and password are required")
-        setIsLoading(false)
-        return
-      }
-
-      const result = await loginAction(formData)
-
-      if (result?.error) {
-        setError(result.error)
-      }
-      // No need to handle success case as loginAction will redirect on success
-    } catch (error) {
-      console.error("Login error:", error)
-      setError("An unexpected error occurred. Please try again.")
-    } finally {
-      setIsLoading(false)
+    // Basit kimlik doğrulama - sadece demo için
+    if (username === "admin" && password === "482733") {
+      // Basit session cookie ayarla
+      document.cookie = "admin_logged_in=true; path=/; max-age=86400" // 24 saat
+      router.push("/admin/dashboard")
+    } else {
+      setError("Geçersiz kullanıcı adı veya şifre")
     }
+
+    setIsLoading(false)
   }
 
   return (
@@ -50,10 +44,10 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Admin Panel</CardTitle>
-          <CardDescription className="text-center">Sign in to access the blog administration panel</CardDescription>
+          <CardDescription className="text-center">Blog yönetim paneline giriş yapın</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               {error && (
                 <Alert variant="destructive">
@@ -63,13 +57,13 @@ export default function AdminLoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="username">Username or Email</Label>
+                <Label htmlFor="username">Kullanıcı Adı</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="username"
                     name="username"
-                    placeholder="Enter your username or email"
+                    placeholder="Kullanıcı adınızı girin"
                     className="pl-10"
                     required
                     disabled={isLoading}
@@ -78,14 +72,14 @@ export default function AdminLoginPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Şifre</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Şifrenizi girin"
                     className="pl-10 pr-10"
                     required
                     disabled={isLoading}
@@ -99,30 +93,24 @@ export default function AdminLoginPage() {
                     disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+                    <span className="sr-only">{showPassword ? "Şifreyi gizle" : "Şifreyi göster"}</span>
                   </Button>
                 </div>
               </div>
             </div>
 
             <Button className="w-full mt-6" type="submit" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <Link
-            href="/admin/forgot-password"
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            Forgot your password?
-          </Link>
           <div className="text-xs text-center text-muted-foreground mt-2 p-2 bg-muted rounded">
-            <strong>Demo credentials:</strong>
+            <strong>Giriş bilgileri:</strong>
             <br />
-            Username: admin
+            Kullanıcı adı: admin
             <br />
-            Password: password
+            Şifre: 482733
           </div>
         </CardFooter>
       </Card>
