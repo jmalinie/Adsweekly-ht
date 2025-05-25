@@ -28,10 +28,11 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
+
   // Params kontrolü
-  if (!params || !slug) {
+  if (!slug) {
     console.error("No params or slug provided")
-    return notFound()
+    notFound()
   }
 
   try {
@@ -39,14 +40,14 @@ export default async function BlogPostPage({
 
     if (!post) {
       console.error(`Post with slug "${slug}" not found`)
-      return notFound()
+      notFound()
     }
 
     if (post.status !== "published") {
       console.error(
         `Post with slug "${slug}" is not published (status: ${post.status})`
       )
-      return notFound()
+      notFound()
     }
 
     const postDate = formatDate(post.published_at || post.created_at)
@@ -185,7 +186,7 @@ export default async function BlogPostPage({
   } catch (error) {
     console.error("Error rendering blog post:", error)
     console.log()
-    return notFound()
+    return "notFound()"
   }
 }
 
