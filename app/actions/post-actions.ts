@@ -1,12 +1,16 @@
 "use server"
 
+import {
+  deleteImageFromBlob,
+  extractFirstImageFromContent,
+  extractImageUrlsFromContent,
+} from "@/lib/blob-utils"
 import { createClient } from "@/lib/supabase/server"
 import { createStaticClient } from "@/lib/supabase/static"
 import { revalidatePath } from "next/cache"
-import { deleteImageFromBlob, extractImageUrlsFromContent, extractFirstImageFromContent } from "@/lib/blob-utils"
 
 export async function createPost(formData: FormData) {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   const title = formData.get("title") as string
   const content = formData.get("content") as string
@@ -46,7 +50,11 @@ export async function createPost(formData: FormData) {
     let counter = 1
 
     while (true) {
-      const { data: existingPost } = await supabase.from("posts").select("id").eq("slug", uniqueSlug).single()
+      const { data: existingPost } = await supabase
+        .from("posts")
+        .select("id")
+        .eq("slug", uniqueSlug)
+        .single()
 
       if (!existingPost) break
 
@@ -91,7 +99,9 @@ export async function createPost(formData: FormData) {
         category_id: categoryId,
       }))
 
-      const { error: categoryError } = await supabase.from("post_categories").insert(postCategories)
+      const { error: categoryError } = await supabase
+        .from("post_categories")
+        .insert(postCategories)
 
       if (categoryError) {
         console.error("Category addition error:", categoryError)
@@ -113,7 +123,11 @@ export async function createPost(formData: FormData) {
     // Revalidate category pages if categories were added
     if (categoryIds.length > 0) {
       for (const categoryId of categoryIds) {
-        const { data: category } = await supabase.from("categories").select("slug").eq("id", categoryId).single()
+        const { data: category } = await supabase
+          .from("categories")
+          .select("slug")
+          .eq("id", categoryId)
+          .single()
 
         if (category) {
           revalidatePath(`/category/${category.slug}`)
@@ -124,12 +138,15 @@ export async function createPost(formData: FormData) {
     return { success: true, postId: post?.id }
   } catch (error) {
     console.error("Post creation error:", error)
-    return { error: "An error occurred while creating the blog post. Please try again." }
+    return {
+      error:
+        "An error occurred while creating the blog post. Please try again.",
+    }
   }
 }
 
 export async function updatePost(postId: string, formData: FormData) {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   const title = formData.get("title") as string
   const content = formData.get("content") as string
@@ -145,7 +162,11 @@ export async function updatePost(postId: string, formData: FormData) {
 
   try {
     // Get current post data for revalidation
-    const { data: currentPost } = await supabase.from("posts").select("slug, status").eq("id", postId).single()
+    const { data: currentPost } = await supabase
+      .from("posts")
+      .select("slug, status")
+      .eq("id", postId)
+      .single()
 
     // Auto-select featured image if not provided
     let finalFeaturedImage = featuredImage
@@ -176,7 +197,10 @@ export async function updatePost(postId: string, formData: FormData) {
     }
 
     // Delete existing categories
-    const { error: deleteError } = await supabase.from("post_categories").delete().eq("post_id", postId)
+    const { error: deleteError } = await supabase
+      .from("post_categories")
+      .delete()
+      .eq("post_id", postId)
 
     if (deleteError) {
       console.error("Category deletion error:", deleteError)
@@ -189,7 +213,9 @@ export async function updatePost(postId: string, formData: FormData) {
         category_id: categoryId,
       }))
 
-      const { error: categoryError } = await supabase.from("post_categories").insert(postCategories)
+      const { error: categoryError } = await supabase
+        .from("post_categories")
+        .insert(postCategories)
 
       if (categoryError) {
         console.error("Category addition error:", categoryError)
@@ -203,14 +229,21 @@ export async function updatePost(postId: string, formData: FormData) {
     revalidatePath("/admin/dashboard/posts")
 
     // Revalidate the post page if it was or is published
-    if (currentPost?.slug && (currentPost.status === "published" || status === "published")) {
+    if (
+      currentPost?.slug &&
+      (currentPost.status === "published" || status === "published")
+    ) {
       revalidatePath(`/${currentPost.slug}`)
     }
 
     // Revalidate category pages
     if (categoryIds.length > 0) {
       for (const categoryId of categoryIds) {
-        const { data: category } = await supabase.from("categories").select("slug").eq("id", categoryId).single()
+        const { data: category } = await supabase
+          .from("categories")
+          .select("slug")
+          .eq("id", categoryId)
+          .single()
 
         if (category) {
           revalidatePath(`/category/${category.slug}`)
@@ -221,12 +254,15 @@ export async function updatePost(postId: string, formData: FormData) {
     return { success: true }
   } catch (error) {
     console.error("Post update error:", error)
-    return { error: "An error occurred while updating the blog post. Please try again." }
+    return {
+      error:
+        "An error occurred while updating the blog post. Please try again.",
+    }
   }
 }
 
 export async function deletePost(postId: string) {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // First get the post
@@ -249,7 +285,10 @@ export async function deletePost(postId: string) {
     const deleteImagePromises: Promise<boolean>[] = []
 
     // 1. Delete featured image
-    if (post.featured_image && post.featured_image.includes("vercel-blob.com")) {
+    if (
+      post.featured_image &&
+      post.featured_image.includes("vercel-blob.com")
+    ) {
       deleteImagePromises.push(deleteImageFromBlob(post.featured_image))
     }
 
@@ -284,15 +323,21 @@ export async function deletePost(postId: string) {
     return { success: true }
   } catch (error) {
     console.error("Post deletion error:", error)
-    return { error: "An error occurred while deleting the blog post. Please try again." }
+    return {
+      error:
+        "An error occurred while deleting the blog post. Please try again.",
+    }
   }
 }
 
 export async function getCategories() {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
-    const { data, error } = await supabase.from("categories").select("*").order("name")
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name")
 
     if (error) {
       console.error("Category fetch error:", error)
@@ -307,10 +352,14 @@ export async function getCategories() {
 }
 
 export async function getFeaturedCategories() {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
-    const { data, error } = await supabase.from("categories").select("*").eq("is_featured", true).order("name")
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("is_featured", true)
+      .order("name")
 
     if (error) {
       console.error("Featured categories fetch error:", error)
@@ -329,7 +378,10 @@ export async function getStaticCategories() {
   const supabase = createStaticClient()
 
   try {
-    const { data, error } = await supabase.from("categories").select("*").order("name")
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name")
 
     if (error) {
       console.error("Static category fetch error:", error)
@@ -349,7 +401,22 @@ export async function getStaticPublishedPosts() {
   try {
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select("id, title, slug, status")
+      .select(
+        `
+        id,
+        title,
+        slug,
+        status,
+        post_categories (
+          categories (
+            id,
+            name,
+            slug,
+            image_url
+          )
+        )
+      `
+      )
       .eq("status", "published")
       .order("published_at", { ascending: false })
 
@@ -366,13 +433,14 @@ export async function getStaticPublishedPosts() {
 }
 
 export async function getPosts(status?: string) {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // First join posts and users
     let postsQuery = supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -391,7 +459,8 @@ export async function getPosts(status?: string) {
           full_name,
           avatar_url
         )
-      `)
+      `
+      )
       .order("created_at", { ascending: false })
 
     if (status) {
@@ -415,13 +484,15 @@ export async function getPosts(status?: string) {
         try {
           const { data: categories } = await supabase
             .from("post_categories")
-            .select(`
+            .select(
+              `
               categories (
                 id,
                 name,
                 slug
               )
-            `)
+            `
+            )
             .eq("post_id", post.id)
 
           return {
@@ -435,7 +506,7 @@ export async function getPosts(status?: string) {
             post_categories: [],
           }
         }
-      }),
+      })
     )
 
     return postsWithCategories
@@ -446,13 +517,14 @@ export async function getPosts(status?: string) {
 }
 
 export async function getPublishedPosts() {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // Get published posts
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -471,7 +543,8 @@ export async function getPublishedPosts() {
           full_name,
           avatar_url
         )
-      `)
+      `
+      )
       .eq("status", "published")
       .order("published_at", { ascending: false })
 
@@ -490,14 +563,16 @@ export async function getPublishedPosts() {
         try {
           const { data: categories } = await supabase
             .from("post_categories")
-            .select(`
+            .select(
+              `
               categories (
                 id,
                 name,
                 slug,
                 image_url
               )
-            `)
+            `
+            )
             .eq("post_id", post.id)
 
           return {
@@ -511,7 +586,7 @@ export async function getPublishedPosts() {
             post_categories: [],
           }
         }
-      }),
+      })
     )
 
     return postsWithCategories
@@ -522,7 +597,7 @@ export async function getPublishedPosts() {
 }
 
 export async function getPostsByCategory(categorySlug: string) {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // First get the category
@@ -557,7 +632,8 @@ export async function getPostsByCategory(categorySlug: string) {
     // Get published posts with these IDs
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -576,7 +652,8 @@ export async function getPostsByCategory(categorySlug: string) {
           full_name,
           avatar_url
         )
-      `)
+      `
+      )
       .in("id", postIds)
       .eq("status", "published")
       .order("published_at", { ascending: false })
@@ -596,14 +673,16 @@ export async function getPostsByCategory(categorySlug: string) {
         try {
           const { data: categories } = await supabase
             .from("post_categories")
-            .select(`
+            .select(
+              `
               categories (
                 id,
                 name,
                 slug,
                 image_url
               )
-            `)
+            `
+            )
             .eq("post_id", post.id)
 
           return {
@@ -617,7 +696,7 @@ export async function getPostsByCategory(categorySlug: string) {
             post_categories: [],
           }
         }
-      }),
+      })
     )
 
     return { category, posts: postsWithCategories }
@@ -633,13 +712,14 @@ export async function getPostBySlug(slug: string) {
     return null
   }
 
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // Get post by slug
     const { data: post, error: postError } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -658,7 +738,8 @@ export async function getPostBySlug(slug: string) {
           full_name,
           avatar_url
         )
-      `)
+      `
+      )
       .eq("slug", slug)
       .single()
 
@@ -674,14 +755,16 @@ export async function getPostBySlug(slug: string) {
     // Get post categories
     const { data: categories, error: categoriesError } = await supabase
       .from("post_categories")
-      .select(`
+      .select(
+        `
         categories (
           id,
           name,
           slug,
           image_url
         )
-      `)
+      `
+      )
       .eq("post_id", post.id)
 
     if (categoriesError) {
@@ -720,13 +803,14 @@ export async function getPostBySlug(slug: string) {
 }
 
 export async function getPostById(id: string) {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // Get post by id
     const { data: post, error: postError } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -745,7 +829,8 @@ export async function getPostById(id: string) {
           full_name,
           avatar_url
         )
-      `)
+      `
+      )
       .eq("id", id)
       .single()
 
@@ -761,14 +846,16 @@ export async function getPostById(id: string) {
     // Get post categories
     const { data: categories } = await supabase
       .from("post_categories")
-      .select(`
+      .select(
+        `
         categories (
           id,
           name,
           slug,
           image_url
         )
-      `)
+      `
+      )
       .eq("post_id", post.id)
 
     return {
@@ -782,7 +869,7 @@ export async function getPostById(id: string) {
 }
 
 export async function autoSelectFeaturedImages() {
-  const supabase =await createClient()
+  const supabase = await createClient()
 
   try {
     // Get all posts without featured images

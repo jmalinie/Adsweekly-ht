@@ -1,12 +1,14 @@
-import { notFound } from "next/navigation"
-import Link from "next/link"
+import {
+  getPostsByCategory,
+  getStaticCategories,
+} from "@/app/actions/post-actions"
+import { BlogCard } from "@/components/blog-card"
+import { OptimizedImage } from "@/components/optimized-image"
+import { Button } from "@/components/ui/button"
 import { ArrowLeft, Store } from "lucide-react"
 import type { Metadata } from "next"
-
-import { Button } from "@/components/ui/button"
-import { BlogCard } from "@/components/blog-card"
-import { getPostsByCategory, getStaticCategories } from "@/app/actions/post-actions"
-import { OptimizedImage } from "@/components/optimized-image"
+import Link from "next/link"
+import { notFound } from "next/navigation"
 
 export const revalidate = 1800 // 30 minutes ISR
 
@@ -29,7 +31,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: `${category.name} Articles`,
-      description: category.description || `Articles in ${category.name} category`,
+      description:
+        category.description || `Articles in ${category.name} category`,
       url: `/category/${category.slug}`,
       mainEntity: {
         "@type": "ItemList",
@@ -49,12 +52,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <div className="container mx-auto px-4 py-8">
           {/* Kategori başlık bölümü */}
           <div className="mb-8">
-            <Link href="/" passHref>
-              <Button variant="ghost" className="mb-4">
+            <Link
+              href="/"
+              passHref
+            >
+              <Button
+                variant="ghost"
+                className="mb-4"
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home
               </Button>
@@ -62,12 +74,19 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
             <div className="flex flex-col items-center text-center">
               {category.image_url && (
-                <OptimizedImage src={category.image_url} alt={category.name} size="lg" className="mb-4" />
+                <OptimizedImage
+                  src={category.image_url}
+                  alt={category.name}
+                  size="lg"
+                  className="mb-4"
+                />
               )}
               <div>
                 <h1 className="text-3xl font-bold mb-2">{category.name}</h1>
                 {category.description && (
-                  <p className="text-muted-foreground max-w-2xl mx-auto mb-2">{category.description}</p>
+                  <p className="text-muted-foreground max-w-2xl mx-auto mb-2">
+                    {category.description}
+                  </p>
                 )}
               </div>
             </div>
@@ -76,18 +95,27 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           {posts.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <Store className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No articles in this category yet</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No articles in this category yet
+              </h3>
               <p className="text-muted-foreground mb-6">
-                There are no published articles in the "{category.name}" category yet.
+                There are no published articles in the "{category.name}"
+                category yet.
               </p>
-              <Link href="/" passHref>
+              <Link
+                href="/"
+                passHref
+              >
                 <Button variant="outline">Back to Home</Button>
               </Link>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {posts.map((post) => (
-                <BlogCard key={post.id} post={post} />
+                <BlogCard
+                  key={post.id}
+                  post={post}
+                />
               ))}
             </div>
           )}
@@ -115,7 +143,9 @@ export async function generateStaticParams() {
 }
 
 // Generate metadata
-export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: CategoryPageProps): Promise<Metadata> {
   try {
     const { category, posts } = await getPostsByCategory(params.slug)
 
@@ -129,11 +159,21 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       title: `${category.name} Articles - Modern Blog`,
       description:
         category.description ||
-        `Browse all articles in ${category.name} category. Find tutorials, guides, and insights about ${category.name.toLowerCase()}.`,
-      keywords: [category.name, "articles", "tutorials", "technology", "programming"],
+        `Browse all articles in ${
+          category.name
+        } category. Find tutorials, guides, and insights about ${category.name.toLowerCase()}.`,
+      keywords: [
+        category.name,
+        "articles",
+        "tutorials",
+        "technology",
+        "programming",
+      ],
       openGraph: {
         title: `${category.name} Articles - Modern Blog`,
-        description: category.description || `Browse all articles in ${category.name} category`,
+        description:
+          category.description ||
+          `Browse all articles in ${category.name} category`,
         type: "website",
         url: `/category/${category.slug}`,
         images: [
@@ -148,7 +188,9 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
       twitter: {
         card: "summary_large_image",
         title: `${category.name} Articles - Modern Blog`,
-        description: category.description || `Browse all articles in ${category.name} category`,
+        description:
+          category.description ||
+          `Browse all articles in ${category.name} category`,
         images: [category.image_url || "/og-category.png"],
       },
       alternates: {

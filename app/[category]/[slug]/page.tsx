@@ -1,20 +1,19 @@
-import { ArrowLeft, Calendar, Tag } from "lucide-react"
-import type { Metadata } from "next"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-
 import {
   getPostBySlug,
-  getStaticPublishedPosts,
+  getStaticPublishedPosts
 } from "@/app/actions/post-actions"
 import { BlogContent } from "@/components/BlogContent"
 import { BlogFeaturedImage } from "@/components/BlogFeaturedImage"
 import { CategoryBadge } from "@/components/category-badge"
 import { Button } from "@/components/ui/button"
 import { formatDate } from "@/lib/utils"
+import { ArrowLeft, Calendar, Tag } from "lucide-react"
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
 
-export const revalidate = 3600 // 1 hour ISR
-export const dynamicParams = false // Sadece generateStaticParams'dan gelen slug'ları kabul et
+export const revalidate = 1800 // 30 minutes ISR
+export const dynamicParams = true // Sadece generateStaticParams'dan gelen slug'ları kabul et
 
 interface BlogPostPageProps {
   params: {
@@ -92,6 +91,51 @@ export async function generateMetadata({
   } catch (error) {
     console.error("Error generating metadata:", error)
     return defaultMetadata
+  }
+}
+
+// generateStaticParams - sadece geçerli blog post slug'larını döndür
+export async function generateStaticParams() {
+  try {
+    const posts = await getStaticPublishedPosts()
+
+    // Sadece geçerli slug'ları döndür - statik dosyaları hariç tut
+    return posts
+      .filter((post) => {
+        // Slug kontrolü
+        if (!post.slug) return false
+
+        // Nokta içeren slug'ları hariç tut (dosya uzantısı)
+        if (post.slug.includes(".")) return false
+
+        // Bilinen statik dosya isimlerini hariç tut
+        const staticFiles = [
+          "favicon",
+          "icon",
+          "apple-icon",
+          "apple-touch-icon",
+          "robots",
+          "sitemap",
+          "manifest",
+          "og-image",
+          "og-home",
+        ]
+
+        if (
+          staticFiles.some((file) => post.slug.toLowerCase().includes(file))
+        ) {
+          return false
+        }
+
+        return true
+      })
+      .map((post) => ({
+        category: post.post_categories[0].categories.slug,
+        slug: post.slug,
+      }))
+  } catch (error) {
+    console.error("Error generating static params:", error)
+    return []
   }
 }
 
@@ -260,49 +304,5 @@ export default async function BlogPostPage({
     console.error("Error rendering blog post:", error)
     console.log()
     notFound()
-  }
-}
-
-// generateStaticParams - sadece geçerli blog post slug'larını döndür
-export async function generateStaticParams() {
-  try {
-    const posts = await getStaticPublishedPosts()
-
-    // Sadece geçerli slug'ları döndür - statik dosyaları hariç tut
-    return posts
-      .filter((post) => {
-        // Slug kontrolü
-        if (!post.slug) return false
-
-        // Nokta içeren slug'ları hariç tut (dosya uzantısı)
-        if (post.slug.includes(".")) return false
-
-        // Bilinen statik dosya isimlerini hariç tut
-        const staticFiles = [
-          "favicon",
-          "icon",
-          "apple-icon",
-          "apple-touch-icon",
-          "robots",
-          "sitemap",
-          "manifest",
-          "og-image",
-          "og-home",
-        ]
-
-        if (
-          staticFiles.some((file) => post.slug.toLowerCase().includes(file))
-        ) {
-          return false
-        }
-
-        return true
-      })
-      .map((post) => ({
-        slug: post.slug,
-      }))
-  } catch (error) {
-    console.error("Error generating static params:", error)
-    return []
   }
 }
