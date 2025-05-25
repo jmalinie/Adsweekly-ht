@@ -23,6 +23,13 @@ export async function getSettingValue(key: string, defaultValue = ""): Promise<s
     return finalValue
   } catch (error) {
     console.error(`Error fetching setting ${key}:`, error)
+
+    // Cache'den eski değeri dön, yoksa default değeri dön
+    const cachedValue = settingsCache.get(key)
+    if (cachedValue) {
+      return cachedValue.value
+    }
+
     return defaultValue
   }
 }
@@ -35,4 +42,23 @@ export function clearSettingsCache() {
 // Belirli bir ayarın cache'ini temizle
 export function clearSettingCache(key: string) {
   settingsCache.delete(key)
+}
+
+// Ayarları doğrudan default değerlerle al (fallback için)
+export function getDefaultSettings(): Record<string, string> {
+  return {
+    site_title: "Modern Blog",
+    site_description: "Latest articles about technology, software development, and web development.",
+    site_url: "https://example.com",
+    admin_email: "admin@example.com",
+    posts_per_page: "10",
+    show_author: "true",
+    show_date: "true",
+    dark_mode: "false",
+    new_comment_notifications: "true",
+    new_user_notifications: "true",
+    newsletter_enabled: "false",
+    cache_enabled: "true",
+    debug_mode: "false",
+  }
 }
