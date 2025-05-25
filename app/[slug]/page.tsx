@@ -1,15 +1,14 @@
-import Link from "next/link"
-import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, Tag } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
 
-import { Button } from "@/components/ui/button"
-import { CategoryBadge } from "@/components/category-badge"
-import { BlogPostClient } from "@/components/blog-post-client"
 import { getPostBySlug, getStaticPublishedPosts } from "@/app/actions/post-actions"
-import { formatDate } from "@/lib/utils"
-import { BlogFeaturedImage } from "@/components/BlogFeaturedImage"
 import { BlogContent } from "@/components/BlogContent"
+import { BlogFeaturedImage } from "@/components/BlogFeaturedImage"
+import { CategoryBadge } from "@/components/category-badge"
+import { Button } from "@/components/ui/button"
+import { formatDate } from "@/lib/utils"
 
 export const revalidate = 3600 // 1 hour ISR
 export const dynamicParams = false // Sadece generateStaticParams'dan gelen slug'ları kabul et
@@ -183,7 +182,12 @@ export async function generateStaticParams() {
 }
 
 // Generate metadata
-export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
   // Default metadata
   const defaultMetadata: Metadata = {
     title: "Article Not Found",
