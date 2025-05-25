@@ -4,9 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
 export async function getSettings() {
-  const supabase = createClient()
-
   try {
+    const supabase = await createClient()
+
+    if (!supabase || typeof supabase.from !== "function") {
+      console.error("Supabase client is not properly initialized")
+      return {}
+    }
+
     const { data: settings, error } = await supabase.from("settings").select("key, value").order("key")
 
     if (error) {
@@ -28,9 +33,14 @@ export async function getSettings() {
 }
 
 export async function updateSettings(formData: FormData) {
-  const supabase = createClient()
-
   try {
+    const supabase = await createClient()
+
+    if (!supabase || typeof supabase.from !== "function") {
+      console.error("Supabase client is not properly initialized")
+      return { error: "Database connection error" }
+    }
+
     const settingsToUpdate = [
       { key: "site_title", value: formData.get("site_title") as string },
       { key: "site_description", value: formData.get("site_description") as string },
@@ -83,9 +93,14 @@ export async function updateSettings(formData: FormData) {
 }
 
 export async function getSetting(key: string): Promise<string | null> {
-  const supabase = createClient()
-
   try {
+    const supabase = await createClient()
+
+    if (!supabase || typeof supabase.from !== "function") {
+      console.error("Supabase client is not properly initialized")
+      return null
+    }
+
     const { data: setting, error } = await supabase.from("settings").select("value").eq("key", key).single()
 
     if (error) {

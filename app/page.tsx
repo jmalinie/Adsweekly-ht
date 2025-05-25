@@ -6,26 +6,29 @@ import { Button } from "@/components/ui/button"
 import { BlogCard } from "@/components/blog-card"
 import { getPublishedPosts, getFeaturedCategories } from "@/app/actions/post-actions"
 import { OptimizedImage } from "@/components/optimized-image"
-import { getSettingValue } from "@/lib/settings"
+import { getSettingValue, getDefaultSettings } from "@/lib/settings"
 
 export const revalidate = 3600 // 1 hour ISR
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const [siteTitle, siteDescription] = await Promise.all([
-      getSettingValue("site_title", "Modern Blog").catch(() => "Modern Blog"),
-      getSettingValue(
-        "site_description",
-        "Latest articles about technology, software development, and web development.",
-      ).catch(() => "Latest articles about technology, software development, and web development."),
+    const defaultSettings = getDefaultSettings()
+
+    const [siteTitle, siteDescription] = await Promise.allSettled([
+      getSettingValue("site_title", defaultSettings.site_title),
+      getSettingValue("site_description", defaultSettings.site_description),
     ])
 
+    const title = siteTitle.status === "fulfilled" ? siteTitle.value : defaultSettings.site_title
+    const description =
+      siteDescription.status === "fulfilled" ? siteDescription.value : defaultSettings.site_description
+
     return {
-      title: `${siteTitle} - Latest Technology Articles`,
-      description: siteDescription,
+      title: `${title} - Latest Technology Articles`,
+      description: description,
       openGraph: {
-        title: `${siteTitle} - Latest Technology Articles`,
-        description: siteDescription,
+        title: `${title} - Latest Technology Articles`,
+        description: description,
         type: "website",
         url: "/",
         images: [
@@ -33,14 +36,14 @@ export async function generateMetadata(): Promise<Metadata> {
             url: "/og-home.png",
             width: 1200,
             height: 630,
-            alt: `${siteTitle} Homepage`,
+            alt: `${title} Homepage`,
           },
         ],
       },
       twitter: {
         card: "summary_large_image",
-        title: `${siteTitle} - Latest Technology Articles`,
-        description: siteDescription,
+        title: `${title} - Latest Technology Articles`,
+        description: description,
         images: ["/og-home.png"],
       },
       alternates: {
@@ -49,34 +52,32 @@ export async function generateMetadata(): Promise<Metadata> {
     }
   } catch (error) {
     console.error("Error generating metadata:", error)
+    const defaultSettings = getDefaultSettings()
     return {
-      title: "Modern Blog - Latest Technology Articles",
-      description: "Latest articles about technology, software development, and web development.",
+      title: `${defaultSettings.site_title} - Latest Technology Articles`,
+      description: defaultSettings.site_description,
     }
   }
 }
 
 export default async function Home() {
   try {
+    const defaultSettings = getDefaultSettings()
+
     // Fetch data with error handling
-    const [postsResult, categoriesResult, siteTitle, siteDescription] = await Promise.allSettled([
-      getPublishedPosts(),
-      getFeaturedCategories(),
-      getSettingValue("site_title", "Modern Blog"),
-      getSettingValue(
-        "site_description",
-        "Latest articles about technology, software development, and web development.",
-      ),
+    const [postsResult, categoriesResult, siteTitleResult, siteDescriptionResult] = await Promise.allSettled([
+      getPublishedPosts().catch(() => []),
+      getFeaturedCategories().catch(() => []),
+      getSettingValue("site_title", defaultSettings.site_title),
+      getSettingValue("site_description", defaultSettings.site_description),
     ])
 
     // Safely extract data with fallbacks
     const posts = postsResult.status === "fulfilled" ? postsResult.value : []
     const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value : []
-    const title = siteTitle.status === "fulfilled" ? siteTitle.value : "Modern Blog"
+    const title = siteTitleResult.status === "fulfilled" ? siteTitleResult.value : defaultSettings.site_title
     const description =
-      siteDescription.status === "fulfilled"
-        ? siteDescription.value
-        : "Latest articles about technology, software development, and web development."
+      siteDescriptionResult.status === "fulfilled" ? siteDescriptionResult.value : defaultSettings.site_description
 
     // Filter out any invalid posts or categories
     const validPosts = Array.isArray(posts) ? posts.filter((post) => post && post.id) : []
@@ -179,10 +180,11 @@ export default async function Home() {
     )
   } catch (error) {
     console.error("Error rendering homepage:", error)
+    const defaultSettings = getDefaultSettings()
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center py-12">
-          <h1 className="text-3xl font-bold mb-4">Modern Blog</h1>
+          <h1 className="text-3xl font-bold mb-4">{defaultSettings.site_title}</h1>
           <p className="text-muted-foreground mb-4">Welcome to our blog. Please try refreshing the page.</p>
           <Link href="/admin" passHref>
             <Button>Go to Admin Panel</Button>
