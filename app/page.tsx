@@ -99,7 +99,7 @@ export default async function Home() {
               <div className="flex gap-4">
                 <Link href="/stores" passHref>
                   <Button>
-                    View all Stores
+                    View all Stores1
                     <Store className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
