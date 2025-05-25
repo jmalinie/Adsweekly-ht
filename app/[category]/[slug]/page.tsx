@@ -184,6 +184,7 @@ export default async function BlogPostPage({
     )
   } catch (error) {
     console.error("Error rendering blog post:", error)
+    console.log()
     return notFound()
   }
 }
