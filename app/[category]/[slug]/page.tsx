@@ -1,5 +1,4 @@
 import { ArrowLeft, Calendar, Tag } from "lucide-react"
-import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -186,7 +185,7 @@ export default async function BlogPostPage({
   } catch (error) {
     console.error("Error rendering blog post:", error)
     console.log()
-    return "notFound()"
+    notFound()
   }
 }
 
@@ -235,74 +234,74 @@ export async function generateStaticParams() {
 }
 
 // Generate metadata
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>
-}): Promise<Metadata> {
-  const { slug } = await params
-  // Default metadata
-  const defaultMetadata: Metadata = {
-    title: "Article Not Found",
-    description: "The requested article could not be found.",
-  }
+// export async function generateMetadata({
+//   params,
+// }: {
+//   params: Promise<{ slug: string }>
+// }): Promise<Metadata> {
+//   const { slug } = await params
+//   // Default metadata
+//   const defaultMetadata: Metadata = {
+//     title: "Article Not Found",
+//     description: "The requested article could not be found.",
+//   }
 
-  try {
-    // Params kontrolü
-    if (!params || !slug) {
-      return defaultMetadata
-    }
+//   try {
+//     // Params kontrolü
+//     if (!params || !slug) {
+//       return defaultMetadata
+//     }
 
-    const post = await getPostBySlug(slug)
+//     const post = await getPostBySlug(slug)
 
-    if (!post) {
-      return defaultMetadata
-    }
+//     if (!post) {
+//       return defaultMetadata
+//     }
 
-    const categories =
-      post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
+//     const categories =
+//       post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
 
-    return {
-      title: post.title || "Untitled Post",
-      description:
-        post.excerpt || `Read ${post.title || "this article"} on Modern Blog.`,
-      keywords: categories
-        .map((cat) => cat.name || "")
-        .filter(Boolean)
-        .join(", "),
-      openGraph: {
-        title: post.title || "Untitled Post",
-        description: post.excerpt || post.title || "Blog post",
-        type: "article",
-        url: `/${categories[0].slug}/${post.slug}`,
-        images: [
-          {
-            url: post.featured_image || "/og-image.png",
-            width: 1200,
-            height: 630,
-            alt: post.title || "Blog post image",
-          },
-        ],
-        publishedTime: post.published_at || post.created_at,
-        modifiedTime: post.updated_at || post.published_at || post.created_at,
-        section:
-          categories.length > 0
-            ? categories[0].name || "Technology"
-            : "Technology",
-        tags: categories.map((cat) => cat.name || "").filter(Boolean),
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: post.title || "Untitled Post",
-        description: post.excerpt || post.title || "Blog post",
-        images: [post.featured_image || "/og-image.png"],
-      },
-      alternates: {
-        canonical: `/${categories[0].slug}/${post.slug}`,
-      },
-    }
-  } catch (error) {
-    console.error("Error generating metadata:", error)
-    return defaultMetadata
-  }
-}
+//     return {
+//       title: post.title || "Untitled Post",
+//       description:
+//         post.excerpt || `Read ${post.title || "this article"} on Modern Blog.`,
+//       keywords: categories
+//         .map((cat) => cat.name || "")
+//         .filter(Boolean)
+//         .join(", "),
+//       openGraph: {
+//         title: post.title || "Untitled Post",
+//         description: post.excerpt || post.title || "Blog post",
+//         type: "article",
+//         url: `/${categories[0].slug}/${post.slug}`,
+//         images: [
+//           {
+//             url: post.featured_image || "/og-image.png",
+//             width: 1200,
+//             height: 630,
+//             alt: post.title || "Blog post image",
+//           },
+//         ],
+//         publishedTime: post.published_at || post.created_at,
+//         modifiedTime: post.updated_at || post.published_at || post.created_at,
+//         section:
+//           categories.length > 0
+//             ? categories[0].name || "Technology"
+//             : "Technology",
+//         tags: categories.map((cat) => cat.name || "").filter(Boolean),
+//       },
+//       twitter: {
+//         card: "summary_large_image",
+//         title: post.title || "Untitled Post",
+//         description: post.excerpt || post.title || "Blog post",
+//         images: [post.featured_image || "/og-image.png"],
+//       },
+//       alternates: {
+//         canonical: `/${categories[0].slug}/${post.slug}`,
+//       },
+//     }
+//   } catch (error) {
+//     console.error("Error generating metadata:", error)
+//     return defaultMetadata
+//   }
+// }

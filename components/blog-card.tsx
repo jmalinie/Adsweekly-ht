@@ -66,7 +66,7 @@ export function BlogCard({ post }: BlogCardProps) {
       </Link>
       <CardHeader className="flex-grow">
         <Link
-          href={`/${slug}`}
+          href={`/${categorySlug}/${slug}`}
           className="hover:underline"
         >
           <h3 className="text-xl font-bold line-clamp-2">{title}</h3>
