@@ -8,6 +8,8 @@ import { CategoryBadge } from "@/components/category-badge"
 import { BlogPostClient } from "@/components/blog-post-client"
 import { getPostBySlug, getStaticPublishedPosts } from "@/app/actions/post-actions"
 import { formatDate } from "@/lib/utils"
+import { BlogFeaturedImage } from "@/components/BlogFeaturedImage"
+import { BlogContent } from "@/components/BlogContent"
 
 export const revalidate = 3600 // 1 hour ISR
 export const dynamicParams = false // Sadece generateStaticParams'dan gelen slug'ları kabul et
@@ -18,23 +20,28 @@ interface BlogPostPageProps {
   }
 }
 
-export default async function BlogPostPage({ params }: BlogPostPageProps) {
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
   // Params kontrolü
-  if (!params || !params.slug) {
+  if (!params || !slug) {
     console.error("No params or slug provided")
     return notFound()
   }
 
   try {
-    const post = await getPostBySlug(params.slug)
+    const post = await getPostBySlug(slug)
 
     if (!post) {
-      console.error(`Post with slug "${params.slug}" not found`)
+      console.error(`Post with slug "${slug}" not found`)
       return notFound()
     }
 
     if (post.status !== "published") {
-      console.error(`Post with slug "${params.slug}" is not published (status: ${post.status})`)
+      console.error(`Post with slug "${slug}" is not published (status: ${post.status})`)
       return notFound()
     }
 
@@ -106,11 +113,11 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </div>
 
               {post.featured_image && (
-                <BlogPostClient.FeaturedImage src={post.featured_image} alt={post.title || "Featured image"} />
+                <BlogFeaturedImage src={post.featured_image} alt={post.title || "Featured image"} />
               )}
             </header>
 
-            <BlogPostClient.Content content={post.content || ""} />
+            <BlogContent content={post.content || ""} />
 
             {/* Related Categories */}
             {categories.length > 0 && (
@@ -185,11 +192,11 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   try {
     // Params kontrolü
-    if (!params || !params.slug) {
+    if (!params || !slug) {
       return defaultMetadata
     }
 
-    const post = await getPostBySlug(params.slug)
+    const post = await getPostBySlug(slug)
 
     if (!post) {
       return defaultMetadata

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 import { deleteImageFromBlob, extractImageUrlsFromContent, extractFirstImageFromContent } from "@/lib/blob-utils"
 
 export async function createPost(formData: FormData) {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   const title = formData.get("title") as string
   const content = formData.get("content") as string
@@ -129,7 +129,7 @@ export async function createPost(formData: FormData) {
 }
 
 export async function updatePost(postId: string, formData: FormData) {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   const title = formData.get("title") as string
   const content = formData.get("content") as string
@@ -226,7 +226,7 @@ export async function updatePost(postId: string, formData: FormData) {
 }
 
 export async function deletePost(postId: string) {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // First get the post
@@ -289,7 +289,7 @@ export async function deletePost(postId: string) {
 }
 
 export async function getCategories() {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     const { data, error } = await supabase.from("categories").select("*").order("name")
@@ -307,7 +307,7 @@ export async function getCategories() {
 }
 
 export async function getFeaturedCategories() {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     const { data, error } = await supabase.from("categories").select("*").eq("is_featured", true).order("name")
@@ -366,7 +366,7 @@ export async function getStaticPublishedPosts() {
 }
 
 export async function getPosts(status?: string) {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // First join posts and users
@@ -446,7 +446,7 @@ export async function getPosts(status?: string) {
 }
 
 export async function getPublishedPosts() {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // Get published posts
@@ -522,7 +522,7 @@ export async function getPublishedPosts() {
 }
 
 export async function getPostsByCategory(categorySlug: string) {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // First get the category
@@ -633,7 +633,7 @@ export async function getPostBySlug(slug: string) {
     return null
   }
 
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // Get post by slug
@@ -720,7 +720,7 @@ export async function getPostBySlug(slug: string) {
 }
 
 export async function getPostById(id: string) {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // Get post by id
@@ -782,7 +782,7 @@ export async function getPostById(id: string) {
 }
 
 export async function autoSelectFeaturedImages() {
-  const supabase = createClient()
+  const supabase =await createClient()
 
   try {
     // Get all posts without featured images
