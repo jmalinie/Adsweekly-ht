@@ -3,7 +3,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { getPostBySlug, getStaticPublishedPosts } from "@/app/actions/post-actions"
+import {
+  getPostBySlug,
+  getStaticPublishedPosts,
+} from "@/app/actions/post-actions"
 import { BlogContent } from "@/components/BlogContent"
 import { BlogFeaturedImage } from "@/components/BlogFeaturedImage"
 import { CategoryBadge } from "@/components/category-badge"
@@ -40,14 +43,17 @@ export default async function BlogPostPage({
     }
 
     if (post.status !== "published") {
-      console.error(`Post with slug "${slug}" is not published (status: ${post.status})`)
+      console.error(
+        `Post with slug "${slug}" is not published (status: ${post.status})`
+      )
       return notFound()
     }
 
     const postDate = formatDate(post.published_at || post.created_at)
 
     // Kategori verilerini güvenli bir şekilde işleyelim - default değerlerle
-    const categories = post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
+    const categories =
+      post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
     const primaryCategory = categories.length > 0 ? categories[0] : null
 
     // JSON-LD structured data for SEO
@@ -57,8 +63,13 @@ export default async function BlogPostPage({
       headline: post.title || "Untitled",
       description: post.excerpt || post.title || "Blog post",
       image: post.featured_image || "/og-image.png",
-      datePublished: post.published_at || post.created_at || new Date().toISOString(),
-      dateModified: post.updated_at || post.published_at || post.created_at || new Date().toISOString(),
+      datePublished:
+        post.published_at || post.created_at || new Date().toISOString(),
+      dateModified:
+        post.updated_at ||
+        post.published_at ||
+        post.created_at ||
+        new Date().toISOString(),
       mainEntityOfPage: {
         "@type": "WebPage",
         "@id": `/${post.slug}`,
@@ -72,18 +83,33 @@ export default async function BlogPostPage({
 
     return (
       <>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <div className="container mx-auto px-4 py-8">
           {primaryCategory ? (
-            <Link href={`/category/${primaryCategory.slug}`} passHref>
-              <Button variant="ghost" className="mb-6">
+            <Link
+              href={`/category/${primaryCategory.slug}`}
+              passHref
+            >
+              <Button
+                variant="ghost"
+                className="mb-6"
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 View all {primaryCategory.name} Ads
               </Button>
             </Link>
           ) : (
-            <Link href="/" passHref>
-              <Button variant="ghost" className="mb-6">
+            <Link
+              href="/"
+              passHref
+            >
+              <Button
+                variant="ghost"
+                className="mb-6"
+              >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home
               </Button>
@@ -92,27 +118,45 @@ export default async function BlogPostPage({
 
           <article className="max-w-4xl mx-auto">
             <header className="mb-8">
-              <h1 className="text-3xl font-bold mb-4" dir="ltr" style={{ direction: "ltr" }}>
+              <h1
+                className="text-3xl font-bold mb-4"
+                dir="ltr"
+                style={{ direction: "ltr" }}
+              >
                 {post.title || "Untitled Post"}
               </h1>
 
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
                 <div className="flex items-center">
                   <Calendar className="mr-1 h-4 w-4" />
-                  <time dateTime={post.published_at || post.created_at || new Date().toISOString()}>{postDate}</time>
+                  <time
+                    dateTime={
+                      post.published_at ||
+                      post.created_at ||
+                      new Date().toISOString()
+                    }
+                  >
+                    {postDate}
+                  </time>
                 </div>
                 {categories.length > 0 && (
                   <div className="flex items-center flex-wrap gap-2">
                     <Tag className="h-4 w-4" />
                     {categories.map((category) => (
-                      <CategoryBadge key={category.id} category={category} />
+                      <CategoryBadge
+                        key={category.id}
+                        category={category}
+                      />
                     ))}
                   </div>
                 )}
               </div>
 
               {post.featured_image && (
-                <BlogFeaturedImage src={post.featured_image} alt={post.title || "Featured image"} />
+                <BlogFeaturedImage
+                  src={post.featured_image}
+                  alt={post.title || "Featured image"}
+                />
               )}
             </header>
 
@@ -121,10 +165,15 @@ export default async function BlogPostPage({
             {/* Related Categories */}
             {categories.length > 0 && (
               <footer className="mt-12 pt-8 border-t">
-                <h3 className="text-lg font-semibold mb-4">View all ads for this store:</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  View all ads for this store:
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {categories.map((category) => (
-                    <CategoryBadge key={category.id} category={category} />
+                    <CategoryBadge
+                      key={category.id}
+                      category={category}
+                    />
                   ))}
                 </div>
               </footer>
@@ -166,7 +215,9 @@ export async function generateStaticParams() {
           "og-home",
         ]
 
-        if (staticFiles.some((file) => post.slug.toLowerCase().includes(file))) {
+        if (
+          staticFiles.some((file) => post.slug.toLowerCase().includes(file))
+        ) {
           return false
         }
 
@@ -206,11 +257,13 @@ export async function generateMetadata({
       return defaultMetadata
     }
 
-    const categories = post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
+    const categories =
+      post.post_categories?.map((pc) => pc.categories).filter(Boolean) || []
 
     return {
       title: post.title || "Untitled Post",
-      description: post.excerpt || `Read ${post.title || "this article"} on Modern Blog.`,
+      description:
+        post.excerpt || `Read ${post.title || "this article"} on Modern Blog.`,
       keywords: categories
         .map((cat) => cat.name || "")
         .filter(Boolean)
@@ -219,7 +272,7 @@ export async function generateMetadata({
         title: post.title || "Untitled Post",
         description: post.excerpt || post.title || "Blog post",
         type: "article",
-        url: `/${post.slug}`,
+        url: `/${categories[0].slug}/${post.slug}`,
         images: [
           {
             url: post.featured_image || "/og-image.png",
@@ -230,7 +283,10 @@ export async function generateMetadata({
         ],
         publishedTime: post.published_at || post.created_at,
         modifiedTime: post.updated_at || post.published_at || post.created_at,
-        section: categories.length > 0 ? categories[0].name || "Technology" : "Technology",
+        section:
+          categories.length > 0
+            ? categories[0].name || "Technology"
+            : "Technology",
         tags: categories.map((cat) => cat.name || "").filter(Boolean),
       },
       twitter: {
@@ -240,7 +296,7 @@ export async function generateMetadata({
         images: [post.featured_image || "/og-image.png"],
       },
       alternates: {
-        canonical: `/${post.slug}`,
+        canonical: `/${categories[0].slug}/${post.slug}`,
       },
     }
   } catch (error) {

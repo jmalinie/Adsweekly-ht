@@ -1,6 +1,6 @@
+import { Calendar } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar } from "lucide-react"
 
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { formatDate } from "@/lib/utils"
@@ -38,13 +38,20 @@ export function BlogCard({ post }: BlogCardProps) {
   // Safely extract post data with fallbacks
   const title = post.title || "Untitled Post"
   const excerpt = post.excerpt || ""
+  const categorySlug =
+    post.post_categories?.[0]?.categories?.slug || "uncategorized"
   const slug = post.slug || ""
-  const featuredImage = post.featured_image || "/placeholder.svg?height=200&width=400&query=blog+post"
+  const featuredImage =
+    post.featured_image ||
+    "/placeholder.svg?height=200&width=400&query=blog+post"
   const postDate = formatDate(post.published_at || post.created_at)
 
   return (
     <Card className="overflow-hidden h-full flex flex-col group">
-      <Link href={`/${slug}`} className="block">
+      <Link
+        href={`/${categorySlug}/${slug}`}
+        className="block"
+      >
         <div className="relative h-48 w-full overflow-hidden">
           <Image
             src={featuredImage || "/placeholder.svg"}
@@ -58,7 +65,10 @@ export function BlogCard({ post }: BlogCardProps) {
         </div>
       </Link>
       <CardHeader className="flex-grow">
-        <Link href={`/${slug}`} className="hover:underline">
+        <Link
+          href={`/${slug}`}
+          className="hover:underline"
+        >
           <h3 className="text-xl font-bold line-clamp-2">{title}</h3>
         </Link>
       </CardHeader>
