@@ -46,7 +46,14 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await login(username, password)
+      // Form verilerini oluştur
+      const formData = new FormData()
+      formData.append("username", username)
+      formData.append("password", password)
+
+      // login action'ı çağır
+      const result = await login(formData)
+
       if (result.success) {
         router.push("/admin/dashboard")
         router.refresh()

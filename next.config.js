@@ -38,6 +38,11 @@ const nextConfig = {
   async rewrites() {
     return {
       beforeFiles: [
+        // Admin sayfasına yönlendirme
+        {
+          source: "/admin",
+          destination: "/admin",
+        },
         // Statik dosyaları public klasöründen servis et
         {
           source: "/apple-icon.png",

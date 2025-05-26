@@ -51,16 +51,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Admin sayfası için özel kontrol
+  if (pathname === "/admin" || pathname === "/admin/") {
+    console.log(`[Middleware] Admin page detected: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // API routes, Next.js internal routes ve diğer özel route'lar
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/admin") ||
+    pathname.startsWith("/admin/") ||
     pathname.startsWith("/stores") ||
     pathname.startsWith("/category") ||
     pathname.startsWith("/deneme") ||
     pathname.startsWith("/coming-soon")
   ) {
+    console.log(`[Middleware] Special route detected: ${pathname}`)
     return NextResponse.next()
   }
 

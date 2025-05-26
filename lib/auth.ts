@@ -186,7 +186,7 @@ export async function login(
   try {
     console.log("Attempting login for:", username)
 
-    // Updated sorgu - SQL enjeksiyon güvenliği için parametreli sorgu kullanıyoruz
+    // SQL enjeksiyon güvenliği için düzeltilmiş sorgu
     const { data: users, error: userError } = await supabase
       .from("users")
       .select("id, username, email, password_hash, is_admin")
