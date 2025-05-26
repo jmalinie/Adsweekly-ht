@@ -11,7 +11,17 @@ export async function uploadImageToBlob(formData: FormData) {
     // Check if BLOB_READ_WRITE_TOKEN is available
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
       console.error("BLOB_READ_WRITE_TOKEN is missing")
-      return { error: "Server configuration error: Missing blob token" }
+
+      // Check if we're in development mode
+      if (process.env.NODE_ENV === "development") {
+        return {
+          error: "Blob token is missing. In development, make sure you have BLOB_READ_WRITE_TOKEN in your .env file.",
+        }
+      } else {
+        return {
+          error: "Server configuration error: Missing blob token. Please contact the administrator.",
+        }
+      }
     }
 
     // File size check (5MB)
@@ -28,15 +38,28 @@ export async function uploadImageToBlob(formData: FormData) {
     const timestamp = Date.now()
     const uniqueFilename = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`
 
-    // Upload to blob
-    const blob = await put(uniqueFilename, file, {
-      access: "public",
-    })
+    try {
+      // Upload to blob
+      const blob = await put(uniqueFilename, file, {
+        access: "public",
+      })
 
-    console.log("Image uploaded successfully:", blob.url)
+      console.log("Image uploaded successfully:", blob.url)
 
-    // Return successful result
-    return { success: true, url: blob.url }
+      // Return successful result
+      return { success: true, url: blob.url }
+    } catch (blobError) {
+      console.error("Blob upload error:", blobError)
+
+      // Check for specific error types
+      if (blobError instanceof Error) {
+        if (blobError.message.includes("unauthorized") || blobError.message.includes("token")) {
+          return { error: "Authentication error with Blob storage. The token may be invalid or expired." }
+        }
+      }
+
+      return { error: "Failed to upload image to storage. Please try again later." }
+    }
   } catch (error) {
     console.error("Image upload error:", error)
     return { error: "Failed to upload image. Please try again." }
@@ -62,7 +85,7 @@ export async function extractImageUrlsFromContent(content: string) {
     const imgRegex = /<img[^>]+src="([^">]+)"/gi
     const matches = [...content.matchAll(imgRegex)]
 
-    return matches.map((match) => (match) => match[1]).filter((src) => src.includes("vercel-blob.com"))
+    return matches.map((match) => match[1]).filter((src) => src.includes("vercel-blob.com"))
   } catch (error) {
     console.error("Error extracting image URLs:", error)
     return []
