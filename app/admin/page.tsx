@@ -33,8 +33,8 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      // Doğrudan fetch API kullanarak login isteği gönderelim
-      const response = await fetch("/api/login", {
+      // Basit login API'sini kullan
+      const response = await fetch("/api/login-simple", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

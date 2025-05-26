@@ -3,6 +3,9 @@ import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import bcrypt from "bcryptjs"
 
+// Edge Runtime'ı devre dışı bırak, Node.js runtime'ı kullan
+export const runtime = "nodejs"
+
 export async function POST(request: Request) {
   try {
     const { username, password } = await request.json()
