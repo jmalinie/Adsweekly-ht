@@ -11,7 +11,19 @@ export async function createPost(formData: FormData) {
 
     if (!supabase) {
       console.error("Failed to create Supabase client")
-      return { error: "Database connection failed" }
+      return { error: "Database connection failed. Please try again." }
+    }
+
+    // Test Supabase connection
+    try {
+      const { error: testError } = await supabase.from("posts").select("id").limit(1)
+      if (testError) {
+        console.error("Supabase connection test failed:", testError)
+        return { error: "Database connection test failed. Please try again." }
+      }
+    } catch (connError) {
+      console.error("Supabase connection error:", connError)
+      return { error: "Database connection error. Please try again." }
     }
 
     const title = formData.get("title") as string
@@ -25,6 +37,10 @@ export async function createPost(formData: FormData) {
     if (!title || !content) {
       return { error: "Title and content fields are required." }
     }
+
+    console.log("Creating post with title:", title)
+    console.log("Content length:", content.length)
+    console.log("Selected categories:", categoryIds)
 
     // Create slug
     const slug = title
@@ -43,7 +59,7 @@ export async function createPost(formData: FormData) {
 
     if (userError || !adminUser) {
       console.error("Admin user not found:", userError)
-      return { error: "Admin user not found" }
+      return { error: "Admin user not found. Please check database configuration." }
     }
 
     // Create unique slug
@@ -62,9 +78,15 @@ export async function createPost(formData: FormData) {
     // Auto-select featured image if not provided
     let finalFeaturedImage = featuredImage
     if (!finalFeaturedImage && content) {
-      const firstImage = await extractFirstImageFromContent(content)
-      if (firstImage) {
-        finalFeaturedImage = firstImage
+      try {
+        const firstImage = await extractFirstImageFromContent(content)
+        if (firstImage) {
+          finalFeaturedImage = firstImage
+          console.log("Auto-selected featured image:", finalFeaturedImage)
+        }
+      } catch (imgError) {
+        console.error("Error extracting featured image:", imgError)
+        // Continue without featured image
       }
     }
 
@@ -86,7 +108,7 @@ export async function createPost(formData: FormData) {
 
     if (error) {
       console.error("Post creation error:", error)
-      return { error: error.message }
+      return { error: error.message || "Failed to create post. Please try again." }
     }
 
     // Add categories

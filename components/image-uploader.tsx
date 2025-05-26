@@ -28,7 +28,7 @@ export function ImageUploader({
     const files = event.target.files
     if (!files || files.length === 0) return
 
-    // Dosya boyutu kontrolü
+    // File size check
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       if (file.size > maxSize * 1024 * 1024) {
@@ -45,23 +45,26 @@ export function ImageUploader({
 
     try {
       if (multiple) {
-        // Çoklu dosya yükleme
+        // Multiple file upload
         const uploadPromises = Array.from(files).map(async (file) => {
           const formData = new FormData()
           formData.append("file", file)
-          return uploadImageToBlob(formData)
+          const result = await uploadImageToBlob(formData)
+          console.log("Upload result for", file.name, ":", result)
+          return result
         })
 
         const results = await Promise.all(uploadPromises)
 
-        // Başarılı yüklemeleri kontrol et
+        // Check successful uploads
         const successfulUploads = results.filter((result) => result.success && result.url)
         const failedUploads = results.filter((result) => result.error)
 
         if (failedUploads.length > 0) {
+          console.error("Failed uploads:", failedUploads)
           toast({
             title: "Uyarı",
-            description: `${failedUploads.length} dosya yüklenemedi.`,
+            description: `${failedUploads.length} dosya yüklenemedi: ${failedUploads[0].error}`,
             variant: "destructive",
           })
         }
@@ -79,11 +82,13 @@ export function ImageUploader({
           })
         }
       } else {
-        // Tekli dosya yükleme
+        // Single file upload
         const formData = new FormData()
         formData.append("file", files[0])
 
+        console.log("Uploading single file:", files[0].name)
         const result = await uploadImageToBlob(formData)
+        console.log("Upload result:", result)
 
         if (result.error) {
           toast({
@@ -103,12 +108,12 @@ export function ImageUploader({
       console.error("Upload error:", error)
       toast({
         title: "Hata",
-        description: "Görsel yüklenirken bir hata oluştu.",
+        description: "Görsel yüklenirken bir hata oluştu. Lütfen tekrar deneyin.",
         variant: "destructive",
       })
     } finally {
       setIsUploading(false)
-      // Input'u temizle
+      // Clear input
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }

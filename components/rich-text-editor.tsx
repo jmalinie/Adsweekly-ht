@@ -49,9 +49,9 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
     if (editorRef.current) {
       editorRef.current.innerHTML = initialValue
 
-      // Metin yönünü LTR (Left-to-Right) olarak ayarla
+      // Explicitly set LTR direction and left alignment
       editorRef.current.style.direction = "ltr"
-      editorRef.current.setAttribute("dir", "ltr")
+      editorRef.current.dir = "ltr"
       editorRef.current.style.textAlign = "left"
     }
   }, [initialValue])
