@@ -2,38 +2,102 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { AdminHeader } from "@/components/admin-header"
+import { AdminSidebar } from "@/components/admin-sidebar"
 
-export default function AdminDashboardPage() {
-  const [isRedirecting, setIsRedirecting] = useState(false)
+export default function DashboardPage() {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const performRedirect = async () => {
+    // Basit bir oturum kontrolü
+    const checkSession = async () => {
       try {
-        setIsRedirecting(true)
-        // Add a small delay to ensure the component is mounted
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        router.replace("/admin/dashboard/posts")
+        const response = await fetch("/api/check-session")
+        const data = await response.json()
+
+        if (!data.authenticated) {
+          router.push("/admin")
+        }
       } catch (error) {
-        console.error("Redirect error:", error)
-        // Fallback to window.location if router fails
-        window.location.href = "/admin/dashboard/posts"
+        console.error("Session check error:", error)
+        // Hata durumunda bile yükleniyor durumunu kaldır
+      } finally {
+        setIsLoading(false)
       }
     }
 
-    performRedirect()
+    checkSession()
   }, [router])
 
-  if (isRedirecting) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="text-sm text-gray-600">Redirecting to posts...</p>
-        </div>
+        <p className="text-lg">Yükleniyor...</p>
       </div>
     )
   }
 
-  return null
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <AdminSidebar />
+      <div className="flex-1">
+        <AdminHeader />
+        <main className="p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Dashboard</CardTitle>
+              <CardDescription>Blog yönetim paneline hoş geldiniz</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4">
+                Bu panel üzerinden blog yazılarınızı, kategorileri ve kullanıcıları yönetebilirsiniz.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Yazılar</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Tüm blog yazılarınızı yönetin</p>
+                    <Button className="mt-4" variant="outline" onClick={() => router.push("/admin/dashboard/posts")}>
+                      Yazıları Görüntüle
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Kategoriler</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Kategori yapılandırmasını yönetin</p>
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      onClick={() => router.push("/admin/dashboard/categories")}
+                    >
+                      Kategorileri Görüntüle
+                    </Button>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Ayarlar</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Site ayarlarını yapılandırın</p>
+                    <Button className="mt-4" variant="outline" onClick={() => router.push("/admin/dashboard/settings")}>
+                      Ayarları Görüntüle
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </div>
+  )
 }

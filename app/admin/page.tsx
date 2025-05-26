@@ -21,7 +21,23 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     setMounted(true)
-  }, [])
+
+    // Oturum kontrolü
+    const checkSession = async () => {
+      try {
+        const response = await fetch("/api/check-session")
+        const data = await response.json()
+
+        if (data.authenticated) {
+          router.push("/admin/dashboard")
+        }
+      } catch (error) {
+        console.error("Session check error:", error)
+      }
+    }
+
+    checkSession()
+  }, [router])
 
   if (!mounted) {
     return null
@@ -46,7 +62,6 @@ export default function AdminLoginPage() {
 
       if (data.success) {
         router.push("/admin/dashboard")
-        router.refresh()
       } else {
         setError(data.error || "Invalid username or password")
       }
