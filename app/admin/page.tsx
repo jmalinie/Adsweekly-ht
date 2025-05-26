@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,31 +17,6 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-
-    // Oturum kontrolü
-    const checkSession = async () => {
-      try {
-        const response = await fetch("/api/check-session")
-        const data = await response.json()
-
-        if (data.authenticated) {
-          router.push("/admin/dashboard")
-        }
-      } catch (error) {
-        console.error("Session check error:", error)
-      }
-    }
-
-    checkSession()
-  }, [router])
-
-  if (!mounted) {
-    return null
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,22 +24,17 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      // Basit login API'sini kullan
-      const response = await fetch("/api/login-simple", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      })
+      // Demo kullanıcı kontrolü
+      if (username === "admin" && password === "482733") {
+        // Başarılı giriş - localStorage'a basit bir token kaydet
+        localStorage.setItem("admin_logged_in", "true")
 
-      const data = await response.json()
-
-      if (data.success) {
-        router.push("/admin/dashboard")
-      } else {
-        setError(data.error || "Invalid username or password")
+        // Dashboard'a yönlendir
+        router.push("/admin/dashboard/posts")
+        return
       }
+
+      setError("Invalid username or password")
     } catch (err) {
       console.error("Login error:", err)
       setError("An unexpected error occurred. Please try again.")
