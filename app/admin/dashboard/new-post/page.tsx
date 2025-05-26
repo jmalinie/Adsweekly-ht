@@ -124,7 +124,11 @@ export default function NewPostPage() {
             placeholder="Yazı başlığı"
             required
             dir="ltr"
-            style={{ direction: "ltr", textAlign: "left" }}
+            style={{
+              direction: "ltr",
+              textAlign: "left",
+              unicodeBidi: "isolate",
+            }}
           />
         </div>
 
@@ -137,7 +141,11 @@ export default function NewPostPage() {
             placeholder="Yazı özeti..."
             className="min-h-[100px]"
             dir="ltr"
-            style={{ direction: "ltr", textAlign: "left" }}
+            style={{
+              direction: "ltr",
+              textAlign: "left",
+              unicodeBidi: "isolate",
+            }}
           />
         </div>
 

@@ -53,6 +53,9 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
       editorRef.current.style.direction = "ltr"
       editorRef.current.dir = "ltr"
       editorRef.current.style.textAlign = "left"
+
+      // Force LTR on the contentEditable div itself
+      editorRef.current.setAttribute("dir", "ltr")
     }
   }, [initialValue])
 
@@ -66,11 +69,16 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
 
   const handleContentChange = () => {
     if (editorRef.current) {
+      // Ensure LTR direction is maintained
+      editorRef.current.style.direction = "ltr"
+      editorRef.current.dir = "ltr"
+      editorRef.current.style.textAlign = "left"
+
       const newContent = editorRef.current.innerHTML
       setContent(newContent)
       onChange(newContent)
 
-      // İçerikteki görselleri güncelle
+      // Update content images
       const images = Array.from(editorRef.current.querySelectorAll("img")).map((img) => img.src)
       setContentImages(images)
     }
@@ -428,7 +436,11 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
             onInput={handleContentChange}
             dangerouslySetInnerHTML={{ __html: content }}
             dir="ltr"
-            style={{ direction: "ltr", textAlign: "left" }}
+            style={{
+              direction: "ltr",
+              textAlign: "left",
+              unicodeBidi: "isolate",
+            }}
           />
         </TabsContent>
 
