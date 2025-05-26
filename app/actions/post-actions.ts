@@ -599,23 +599,27 @@ export async function getPostsByCategory(categorySlug: string) {
   try {
     const supabase = await createClient()
 
-    // First get the category ID
+    // First get the category
     const { data: category, error: categoryError } = await supabase
       .from("categories")
-      .select("id")
+      .select("*")
       .eq("slug", categorySlug)
       .single()
 
-    if (categoryError || !category) {
+    if (categoryError) {
       console.error("Error fetching category:", categoryError)
-      return []
+      return { category: null, posts: [] }
+    }
+
+    if (!category) {
+      return { category: null, posts: [] }
     }
 
     // Then get posts in this category
-    const { data, error } = await supabase
+    const { data: postCategories, error: postsError } = await supabase
       .from("post_categories")
-      .select(
-        `
+      .select(`
+        post_id,
         posts (
           id,
           title,
@@ -630,23 +634,23 @@ export async function getPostsByCategory(categorySlug: string) {
             full_name
           )
         )
-      `,
-      )
+      `)
       .eq("category_id", category.id)
       .eq("posts.status", "published")
-      .order("posts.published_at", { ascending: false })
+      .order("post_id", { ascending: false })
 
-    if (error) {
-      console.error("Error fetching posts by category:", error)
-      return []
+    if (postsError) {
+      console.error("Error fetching posts by category:", postsError)
+      return { category, posts: [] }
     }
 
     // Extract posts from the nested structure
-    const posts = data.map((item) => item.posts).filter(Boolean)
-    return posts
+    const posts = postCategories.map((item) => item.posts).filter(Boolean)
+
+    return { category, posts }
   } catch (error) {
     console.error("Error in getPostsByCategory:", error)
-    return []
+    return { category: null, posts: [] }
   }
 }
 
