@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
-import { login } from "@/app/actions/auth-actions"
-import { createClient } from "@/lib/supabase/client"
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -23,18 +21,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     setMounted(true)
-    // Check if already logged in
-    const checkAuth = async () => {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        router.push("/admin/dashboard")
-      }
-    }
-    checkAuth()
-  }, [router])
+  }, [])
 
   if (!mounted) {
     return null
@@ -46,19 +33,22 @@ export default function AdminLoginPage() {
     setIsLoading(true)
 
     try {
-      // Form verilerini oluştur
-      const formData = new FormData()
-      formData.append("username", username)
-      formData.append("password", password)
+      // Doğrudan fetch API kullanarak login isteği gönderelim
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      })
 
-      // login action'ı çağır
-      const result = await login(formData)
+      const data = await response.json()
 
-      if (result.success) {
+      if (data.success) {
         router.push("/admin/dashboard")
         router.refresh()
       } else {
-        setError(result.error || "Invalid username or password")
+        setError(data.error || "Invalid username or password")
       }
     } catch (err) {
       console.error("Login error:", err)
@@ -119,7 +109,7 @@ export default function AdminLoginPage() {
           <div className="text-sm text-gray-500 text-center">
             <p>Demo Credentials:</p>
             <p>Username: admin</p>
-            <p>Password: 123456</p>
+            <p>Password: 482733</p>
           </div>
         </CardFooter>
       </Card>
