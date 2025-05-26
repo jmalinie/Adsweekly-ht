@@ -7,71 +7,129 @@ import { revalidatePath } from "next/cache"
 
 export async function createPost(formData: FormData) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
-    // Get the current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { error: "You must be logged in to create a post" }
+    if (!supabase) {
+      console.error("Failed to create Supabase client")
+      return { error: "Database connection failed" }
     }
 
-    // Extract form data
     const title = formData.get("title") as string
-    const slug = formData.get("slug") as string
     const content = formData.get("content") as string
     const excerpt = formData.get("excerpt") as string
-    const featuredImage = formData.get("featuredImage") as string
     const status = formData.get("status") as string
+    const featuredImage = formData.get("featuredImage") as string
     const categoryIds = formData.getAll("categories") as string[]
 
-    // Validate required fields
-    if (!title || !slug) {
-      return { error: "Title and slug are required" }
+    // Basic validation
+    if (!title || !content) {
+      return { error: "Title and content fields are required." }
+    }
+
+    // Create slug
+    const slug = title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim()
+
+    // Get admin user ID
+    const { data: adminUser, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("username", "admin")
+      .single()
+
+    if (userError || !adminUser) {
+      console.error("Admin user not found:", userError)
+      return { error: "Admin user not found" }
+    }
+
+    // Create unique slug
+    let uniqueSlug = slug
+    let counter = 1
+
+    while (true) {
+      const { data: existingPost } = await supabase.from("posts").select("id").eq("slug", uniqueSlug).single()
+
+      if (!existingPost) break
+
+      uniqueSlug = `${slug}-${counter}`
+      counter++
+    }
+
+    // Auto-select featured image if not provided
+    let finalFeaturedImage = featuredImage
+    if (!finalFeaturedImage && content) {
+      const firstImage = await extractFirstImageFromContent(content)
+      if (firstImage) {
+        finalFeaturedImage = firstImage
+      }
     }
 
     // Create post
-    const { data: post, error: postError } = await supabase
+    const { data: post, error } = await supabase
       .from("posts")
       .insert({
         title,
-        slug,
+        slug: uniqueSlug,
         content,
-        excerpt,
-        featured_image: featuredImage,
+        excerpt: excerpt || null,
+        featured_image: finalFeaturedImage || null,
+        author_id: adminUser.id,
         status,
-        user_id: user.id,
         published_at: status === "published" ? new Date().toISOString() : null,
       })
       .select("id")
       .single()
 
-    if (postError) {
-      console.error("Error creating post:", postError)
-      return { error: postError.message }
+    if (error) {
+      console.error("Post creation error:", error)
+      return { error: error.message }
     }
 
-    // Add categories if provided
-    if (categoryIds.length > 0 && post) {
+    // Add categories
+    if (post && categoryIds.length > 0) {
       const postCategories = categoryIds.map((categoryId) => ({
         post_id: post.id,
         category_id: categoryId,
       }))
 
-      const { error: categoriesError } = await supabase.from("post_categories").insert(postCategories)
+      const { error: categoryError } = await supabase.from("post_categories").insert(postCategories)
 
-      if (categoriesError) {
-        console.error("Error adding categories:", categoriesError)
-        // We don't return an error here because the post was created successfully
+      if (categoryError) {
+        console.error("Category addition error:", categoryError)
+        // Post created but categories couldn't be added, still consider it successful
+      }
+    }
+
+    // Revalidate all relevant paths for ISR
+    revalidatePath("/")
+    revalidatePath("/blog")
+    revalidatePath("/admin/dashboard")
+    revalidatePath("/admin/dashboard/posts")
+
+    // If published, revalidate the new post page
+    if (status === "published") {
+      revalidatePath(`/${uniqueSlug}`)
+    }
+
+    // Revalidate category pages if categories were added
+    if (categoryIds.length > 0) {
+      for (const categoryId of categoryIds) {
+        const { data: category } = await supabase.from("categories").select("slug").eq("id", categoryId).single()
+
+        if (category) {
+          revalidatePath(`/category/${category.slug}`)
+        }
       }
     }
 
     return { success: true, postId: post?.id }
   } catch (error) {
-    console.error("Error in createPost:", error)
-    return { error: "An unexpected error occurred" }
+    console.error("Post creation error:", error)
+    return { error: "An error occurred while creating the blog post. Please try again." }
   }
 }
 
@@ -277,7 +335,7 @@ export async function getFeaturedCategories() {
 
 export async function getPosts(status?: string) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // First join posts and users
     let postsQuery = supabase
@@ -318,7 +376,7 @@ export async function getPosts(status?: string) {
 
 export async function getPostById(id: string) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("posts")
@@ -365,7 +423,7 @@ export async function getPostById(id: string) {
 
 export async function getPostBySlug(slug: string) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("posts")

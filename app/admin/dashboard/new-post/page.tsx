@@ -35,8 +35,17 @@ export default function NewPostPage() {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const categoriesData = await getCategories()
-      setCategories(categoriesData)
+      try {
+        const categoriesData = await getCategories()
+        setCategories(categoriesData)
+      } catch (error) {
+        console.error("Kategori yükleme hatası:", error)
+        toast({
+          title: "Hata",
+          description: "Kategoriler yüklenirken bir hata oluştu.",
+          variant: "destructive",
+        })
+      }
     }
 
     fetchCategories()
@@ -74,12 +83,12 @@ export default function NewPostPage() {
         router.push("/admin/dashboard")
       }
     } catch (error) {
+      console.error("Blog yazısı oluşturma hatası:", error)
       toast({
         title: "Hata",
         description: "Blog yazısı oluşturulurken bir hata oluştu.",
         variant: "destructive",
       })
-      console.error(error)
     } finally {
       setIsSubmitting(false)
     }
@@ -115,7 +124,7 @@ export default function NewPostPage() {
             placeholder="Yazı başlığı"
             required
             dir="ltr"
-            style={{ direction: "ltr" }}
+            style={{ direction: "ltr", textAlign: "left" }}
           />
         </div>
 
@@ -128,7 +137,7 @@ export default function NewPostPage() {
             placeholder="Yazı özeti..."
             className="min-h-[100px]"
             dir="ltr"
-            style={{ direction: "ltr" }}
+            style={{ direction: "ltr", textAlign: "left" }}
           />
         </div>
 
@@ -157,18 +166,22 @@ export default function NewPostPage() {
           <div className="space-y-2">
             <Label>Kategoriler</Label>
             <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category.id}`}
-                    checked={selectedCategories.includes(category.id)}
-                    onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
-                  />
-                  <Label htmlFor={`category-${category.id}`} className="text-sm font-normal cursor-pointer">
-                    {category.name}
-                  </Label>
-                </div>
-              ))}
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <div key={category.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`category-${category.id}`}
+                      checked={selectedCategories.includes(category.id)}
+                      onCheckedChange={(checked) => handleCategoryChange(category.id, checked as boolean)}
+                    />
+                    <Label htmlFor={`category-${category.id}`} className="text-sm font-normal cursor-pointer">
+                      {category.name}
+                    </Label>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Kategori bulunamadı.</p>
+              )}
             </div>
           </div>
         </div>

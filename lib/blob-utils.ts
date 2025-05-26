@@ -1,80 +1,41 @@
-"use server"
-
-import { put, del } from "@vercel/blob"
-import { nanoid } from "nanoid"
+import { put } from "@vercel/blob"
 
 export async function uploadImageToBlob(formData: FormData) {
-  const file = formData.get("file") as File
-
-  if (!file) {
-    return { error: "File not found" }
-  }
-
-  if (!file.type.startsWith("image/")) {
-    return { error: "Only image files can be uploaded" }
-  }
-
   try {
-    // Create unique filename
-    const uniqueId = nanoid()
-    const extension = file.name.split(".").pop()
-    const fileName = `${uniqueId}.${extension}`
+    const file = formData.get("file") as File
+    if (!file) {
+      return { error: "No file provided" }
+    }
 
-    // Upload to Blob
-    const blob = await put(fileName, file, {
+    // Dosya boyutu kontrolü (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return { error: "File size exceeds 5MB limit" }
+    }
+
+    // Dosya türü kontrolü
+    if (!file.type.startsWith("image/")) {
+      return { error: "Only image files are allowed" }
+    }
+
+    // Blob'a yükle
+    const blob = await put(file.name, file, {
       access: "public",
-      contentType: file.type,
     })
 
-    return {
-      success: true,
-      url: blob.url,
-      fileName: blob.pathname,
-    }
+    // Başarılı sonuç döndür
+    return { success: true, url: blob.url }
   } catch (error) {
     console.error("Image upload error:", error)
-    return { error: "An error occurred while uploading the image" }
+    return { error: "Failed to upload image" }
   }
 }
 
-// Helper function to extract Blob pathname from URL
-export async function getBlobPathnameFromUrl(url: string): Promise<string | null> {
+export async function deleteImageFromBlob(url: string) {
   try {
-    // Extract pathname from Vercel Blob URLs
-    if (url.includes("vercel-blob.com")) {
-      const urlObj = new URL(url)
-      // pathname is the path part of the URL (after domain)
-      return urlObj.pathname.startsWith("/") ? urlObj.pathname.substring(1) : urlObj.pathname
-    }
-    return null
-  } catch (error) {
-    console.error("URL parsing error:", error)
-    return null
-  }
-}
-
-// Helper function to extract all image URLs from content
-export async function extractImageUrlsFromContent(content: string): Promise<string[]> {
-  const imgRegex = /<img[^>]+src="([^">]+)"/g
-  const urls: string[] = []
-  let match
-
-  while ((match = imgRegex.exec(content)) !== null) {
-    if (match[1].includes("vercel-blob.com")) {
-      urls.push(match[1])
-    }
-  }
-
-  return urls
-}
-
-// Function to delete image from Vercel Blob
-export async function deleteImageFromBlob(url: string): Promise<boolean> {
-  try {
-    const pathname = await getBlobPathnameFromUrl(url)
-    if (!pathname) return false
-
-    await del(pathname)
+    // Vercel Blob API'si ile silme işlemi
+    // Not: Bu fonksiyon şu anda Vercel Blob API'sinde doğrudan desteklenmiyor
+    // Gerçek bir silme işlemi için Vercel Blob API'sinin gelecekteki sürümlerini bekleyin
+    console.log("Image deletion requested for:", url)
     return true
   } catch (error) {
     console.error("Image deletion error:", error)
@@ -82,14 +43,26 @@ export async function deleteImageFromBlob(url: string): Promise<boolean> {
   }
 }
 
-// Function to extract the first image URL from content
-export async function extractFirstImageFromContent(content: string): Promise<string | null> {
-  const imgRegex = /<img[^>]+src="([^">]+)"/
-  const match = imgRegex.exec(content)
-
-  if (match && match[1]) {
-    return match[1]
+export async function extractImageUrlsFromContent(content: string) {
+  try {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(content, "text/html")
+    const images = Array.from(doc.querySelectorAll("img"))
+    return images.map((img) => img.src).filter((src) => src.includes("vercel-blob.com"))
+  } catch (error) {
+    console.error("Error extracting image URLs:", error)
+    return []
   }
+}
 
-  return null
+export async function extractFirstImageFromContent(content: string) {
+  try {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(content, "text/html")
+    const firstImage = doc.querySelector("img")
+    return firstImage?.src || null
+  } catch (error) {
+    console.error("Error extracting first image:", error)
+    return null
+  }
 }

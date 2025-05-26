@@ -52,6 +52,7 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
       // Metin yönünü LTR (Left-to-Right) olarak ayarla
       editorRef.current.style.direction = "ltr"
       editorRef.current.setAttribute("dir", "ltr")
+      editorRef.current.style.textAlign = "left"
     }
   }, [initialValue])
 
@@ -100,8 +101,21 @@ export function RichTextEditor({ initialValue = "", onChange }: RichTextEditorPr
   }
 
   const insertImage = (imageUrl: string) => {
-    const imageHtml = `<img src="${imageUrl}" alt="Blog görseli" style="max-width: 100%; height: auto; margin: 10px 0;" />`
-    insertContent(imageHtml)
+    try {
+      const imageHtml = `<img src="${imageUrl}" alt="Blog görseli" style="max-width: 100%; height: auto; margin: 10px 0;" />`
+      insertContent(imageHtml)
+      toast({
+        title: "Başarılı",
+        description: "Görsel başarıyla eklendi.",
+      })
+    } catch (error) {
+      console.error("Görsel ekleme hatası:", error)
+      toast({
+        title: "Hata",
+        description: "Görsel eklenirken bir hata oluştu.",
+        variant: "destructive",
+      })
+    }
   }
 
   const insertLink = () => {
