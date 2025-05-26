@@ -10,22 +10,22 @@ export function formatDate(dateString: string): string {
 
   const date = new Date(dateString)
 
-  // Geçerli bir tarih değilse boş döndür
+  // Check if date is valid
   if (isNaN(date.getTime())) return ""
 
-  // Tarih formatını oluştur: "1 Ocak 2023" gibi
-  return new Intl.DateTimeFormat("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date)
+  // Format date as DD.MM.YYYY
+  const day = date.getDate().toString().padStart(2, "0")
+  const month = (date.getMonth() + 1).toString().padStart(2, "0")
+  const year = date.getFullYear()
+
+  return `${day}.${month}.${year}`
 }
 
 export function truncateText(text: string, maxLength: number): string {
   if (!text) return ""
   if (text.length <= maxLength) return text
 
-  return text.slice(0, maxLength) + "..."
+  return text.substring(0, maxLength) + "..."
 }
 
 export function slugify(text: string): string {
@@ -34,11 +34,9 @@ export function slugify(text: string): string {
   return text
     .toString()
     .toLowerCase()
-    .replace(/\s+/g, "-") // Boşlukları tire ile değiştir
-    .replace(/[^\w-]+/g, "") // Alfanümerik olmayan karakterleri kaldır
-    .replace(/--+/g, "-") // Birden fazla tireyi tek tire ile değiştir
-    .replace(/^-+/, "") // Baştaki tireleri kaldır
-    .replace(/-+$/, "") // Sondaki tireleri kaldır
-    .normalize("NFD") // Unicode normalleştirme
-    .replace(/[\u0300-\u036f]/g, "") // Aksan işaretlerini kaldır
+    .replace(/\s+/g, "-") // Replace spaces with -
+    .replace(/[^\w-]+/g, "") // Remove all non-word chars
+    .replace(/--+/g, "-") // Replace multiple - with single -
+    .replace(/^-+/, "") // Trim - from start of text
+    .replace(/-+$/, "") // Trim - from end of text
 }

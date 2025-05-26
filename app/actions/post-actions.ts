@@ -1,147 +1,77 @@
 "use server"
 
-import {
-  deleteImageFromBlob,
-  extractFirstImageFromContent,
-  extractImageUrlsFromContent,
-} from "@/lib/blob-utils"
+import { deleteImageFromBlob, extractFirstImageFromContent, extractImageUrlsFromContent } from "@/lib/blob-utils"
 import { createClient } from "@/lib/supabase/server"
 import { createStaticClient } from "@/lib/supabase/static"
 import { revalidatePath } from "next/cache"
 
 export async function createPost(formData: FormData) {
-  const supabase = await createClient()
-
-  const title = formData.get("title") as string
-  const content = formData.get("content") as string
-  const excerpt = formData.get("excerpt") as string
-  const status = formData.get("status") as string
-  const featuredImage = formData.get("featuredImage") as string
-  const categoryIds = formData.getAll("categories") as string[]
-
-  // Basic validation
-  if (!title || !content) {
-    return { error: "Title and content fields are required." }
-  }
-
-  // Create slug
-  const slug = title
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim()
-
   try {
-    // Get admin user ID
-    const { data: adminUser, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("username", "admin")
-      .single()
+    const supabase = createClient()
 
-    if (userError || !adminUser) {
-      console.error("Admin user not found:", userError)
-      return { error: "Admin user not found" }
+    // Get the current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: "You must be logged in to create a post" }
     }
 
-    // Create unique slug
-    let uniqueSlug = slug
-    let counter = 1
+    // Extract form data
+    const title = formData.get("title") as string
+    const slug = formData.get("slug") as string
+    const content = formData.get("content") as string
+    const excerpt = formData.get("excerpt") as string
+    const featuredImage = formData.get("featuredImage") as string
+    const status = formData.get("status") as string
+    const categoryIds = formData.getAll("categories") as string[]
 
-    while (true) {
-      const { data: existingPost } = await supabase
-        .from("posts")
-        .select("id")
-        .eq("slug", uniqueSlug)
-        .single()
-
-      if (!existingPost) break
-
-      uniqueSlug = `${slug}-${counter}`
-      counter++
-    }
-
-    // Auto-select featured image if not provided
-    let finalFeaturedImage = featuredImage
-    if (!finalFeaturedImage && content) {
-      const firstImage = await extractFirstImageFromContent(content)
-      if (firstImage) {
-        finalFeaturedImage = firstImage
-      }
+    // Validate required fields
+    if (!title || !slug) {
+      return { error: "Title and slug are required" }
     }
 
     // Create post
-    const { data: post, error } = await supabase
+    const { data: post, error: postError } = await supabase
       .from("posts")
       .insert({
         title,
-        slug: uniqueSlug,
+        slug,
         content,
-        excerpt: excerpt || null,
-        featured_image: finalFeaturedImage || null,
-        author_id: adminUser.id,
+        excerpt,
+        featured_image: featuredImage,
         status,
+        user_id: user.id,
         published_at: status === "published" ? new Date().toISOString() : null,
       })
       .select("id")
       .single()
 
-    if (error) {
-      console.error("Post creation error:", error)
-      throw error
+    if (postError) {
+      console.error("Error creating post:", postError)
+      return { error: postError.message }
     }
 
-    // Add categories
-    if (post && categoryIds.length > 0) {
+    // Add categories if provided
+    if (categoryIds.length > 0 && post) {
       const postCategories = categoryIds.map((categoryId) => ({
         post_id: post.id,
         category_id: categoryId,
       }))
 
-      const { error: categoryError } = await supabase
-        .from("post_categories")
-        .insert(postCategories)
+      const { error: categoriesError } = await supabase.from("post_categories").insert(postCategories)
 
-      if (categoryError) {
-        console.error("Category addition error:", categoryError)
-        // Post created but categories couldn't be added, still consider it successful
-      }
-    }
-
-    // Revalidate all relevant paths for ISR
-    revalidatePath("/")
-    revalidatePath("/blog")
-    revalidatePath("/admin/dashboard")
-    revalidatePath("/admin/dashboard/posts")
-
-    // If published, revalidate the new post page
-    if (status === "published") {
-      revalidatePath(`/${uniqueSlug}`)
-    }
-
-    // Revalidate category pages if categories were added
-    if (categoryIds.length > 0) {
-      for (const categoryId of categoryIds) {
-        const { data: category } = await supabase
-          .from("categories")
-          .select("slug")
-          .eq("id", categoryId)
-          .single()
-
-        if (category) {
-          revalidatePath(`/category/${category.slug}`)
-        }
+      if (categoriesError) {
+        console.error("Error adding categories:", categoriesError)
+        // We don't return an error here because the post was created successfully
       }
     }
 
     return { success: true, postId: post?.id }
   } catch (error) {
-    console.error("Post creation error:", error)
-    return {
-      error:
-        "An error occurred while creating the blog post. Please try again.",
-    }
+    console.error("Error in createPost:", error)
+    return { error: "An unexpected error occurred" }
   }
 }
 
@@ -162,11 +92,7 @@ export async function updatePost(postId: string, formData: FormData) {
 
   try {
     // Get current post data for revalidation
-    const { data: currentPost } = await supabase
-      .from("posts")
-      .select("slug, status")
-      .eq("id", postId)
-      .single()
+    const { data: currentPost } = await supabase.from("posts").select("slug, status").eq("id", postId).single()
 
     // Auto-select featured image if not provided
     let finalFeaturedImage = featuredImage
@@ -197,10 +123,7 @@ export async function updatePost(postId: string, formData: FormData) {
     }
 
     // Delete existing categories
-    const { error: deleteError } = await supabase
-      .from("post_categories")
-      .delete()
-      .eq("post_id", postId)
+    const { error: deleteError } = await supabase.from("post_categories").delete().eq("post_id", postId)
 
     if (deleteError) {
       console.error("Category deletion error:", deleteError)
@@ -213,9 +136,7 @@ export async function updatePost(postId: string, formData: FormData) {
         category_id: categoryId,
       }))
 
-      const { error: categoryError } = await supabase
-        .from("post_categories")
-        .insert(postCategories)
+      const { error: categoryError } = await supabase.from("post_categories").insert(postCategories)
 
       if (categoryError) {
         console.error("Category addition error:", categoryError)
@@ -229,21 +150,14 @@ export async function updatePost(postId: string, formData: FormData) {
     revalidatePath("/admin/dashboard/posts")
 
     // Revalidate the post page if it was or is published
-    if (
-      currentPost?.slug &&
-      (currentPost.status === "published" || status === "published")
-    ) {
+    if (currentPost?.slug && (currentPost.status === "published" || status === "published")) {
       revalidatePath(`/${currentPost.slug}`)
     }
 
     // Revalidate category pages
     if (categoryIds.length > 0) {
       for (const categoryId of categoryIds) {
-        const { data: category } = await supabase
-          .from("categories")
-          .select("slug")
-          .eq("id", categoryId)
-          .single()
+        const { data: category } = await supabase.from("categories").select("slug").eq("id", categoryId).single()
 
         if (category) {
           revalidatePath(`/category/${category.slug}`)
@@ -255,8 +169,7 @@ export async function updatePost(postId: string, formData: FormData) {
   } catch (error) {
     console.error("Post update error:", error)
     return {
-      error:
-        "An error occurred while updating the blog post. Please try again.",
+      error: "An error occurred while updating the blog post. Please try again.",
     }
   }
 }
@@ -285,10 +198,7 @@ export async function deletePost(postId: string) {
     const deleteImagePromises: Promise<boolean>[] = []
 
     // 1. Delete featured image
-    if (
-      post.featured_image &&
-      post.featured_image.includes("vercel-blob.com")
-    ) {
+    if (post.featured_image && post.featured_image.includes("vercel-blob.com")) {
       deleteImagePromises.push(deleteImageFromBlob(post.featured_image))
     }
 
@@ -324,8 +234,7 @@ export async function deletePost(postId: string) {
   } catch (error) {
     console.error("Post deletion error:", error)
     return {
-      error:
-        "An error occurred while deleting the blog post. Please try again.",
+      error: "An error occurred while deleting the blog post. Please try again.",
     }
   }
 }
@@ -334,10 +243,7 @@ export async function getCategories() {
   const supabase = await createClient()
 
   try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .order("name")
+    const { data, error } = await supabase.from("categories").select("*").order("name")
 
     if (error) {
       console.error("Category fetch error:", error)
@@ -355,11 +261,7 @@ export async function getFeaturedCategories() {
   const supabase = await createClient()
 
   try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("is_featured", true)
-      .order("name")
+    const { data, error } = await supabase.from("categories").select("*").eq("is_featured", true).order("name")
 
     if (error) {
       console.error("Featured categories fetch error:", error)
@@ -373,69 +275,10 @@ export async function getFeaturedCategories() {
   }
 }
 
-// Static generation için ayrı fonksiyonlar
-export async function getStaticCategories() {
-  const supabase = createStaticClient()
-
-  try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .order("name")
-
-    if (error) {
-      console.error("Static category fetch error:", error)
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    console.error("Static category fetch error:", error)
-    return []
-  }
-}
-
-export async function getStaticPublishedPosts() {
-  const supabase = createStaticClient()
-
-  try {
-    const { data: posts, error: postsError } = await supabase
-      .from("posts")
-      .select(
-        `
-        id,
-        title,
-        slug,
-        status,
-        post_categories (
-          categories (
-            id,
-            name,
-            slug,
-            image_url
-          )
-        )
-      `
-      )
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-
-    if (postsError) {
-      console.error("Static published posts fetch error:", postsError)
-      return []
-    }
-
-    return posts || []
-  } catch (error) {
-    console.error("Static published post fetch error:", error)
-    return []
-  }
-}
-
 export async function getPosts(status?: string) {
-  const supabase = await createClient()
-
   try {
+    const supabase = createClient()
+
     // First join posts and users
     let postsQuery = supabase
       .from("posts")
@@ -444,22 +287,14 @@ export async function getPosts(status?: string) {
         id,
         title,
         slug,
-        content,
-        excerpt,
-        featured_image,
         status,
-        view_count,
         published_at,
         created_at,
-        updated_at,
-        author_id,
-        users!posts_author_id_fkey (
-          id,
+        users (
           username,
-          full_name,
-          avatar_url
+          full_name
         )
-      `
+      `,
       )
       .order("created_at", { ascending: false })
 
@@ -467,61 +302,25 @@ export async function getPosts(status?: string) {
       postsQuery = postsQuery.eq("status", status)
     }
 
-    const { data: posts, error: postsError } = await postsQuery
+    const { data, error } = await postsQuery
 
-    if (postsError) {
-      console.error("Posts fetch error:", postsError)
+    if (error) {
+      console.error("Error fetching posts:", error)
       return []
     }
 
-    if (!posts || posts.length === 0) {
-      return []
-    }
-
-    // Get categories for each post separately
-    const postsWithCategories = await Promise.all(
-      posts.map(async (post) => {
-        try {
-          const { data: categories } = await supabase
-            .from("post_categories")
-            .select(
-              `
-              categories (
-                id,
-                name,
-                slug
-              )
-            `
-            )
-            .eq("post_id", post.id)
-
-          return {
-            ...post,
-            post_categories: categories || [],
-          }
-        } catch (error) {
-          console.error(`Post ${post.id} categories fetch error:`, error)
-          return {
-            ...post,
-            post_categories: [],
-          }
-        }
-      })
-    )
-
-    return postsWithCategories
+    return data || []
   } catch (error) {
-    console.error("Post fetch error:", error)
+    console.error("Error in getPosts:", error)
     return []
   }
 }
 
-export async function getPublishedPosts() {
-  const supabase = await createClient()
-
+export async function getPostById(id: string) {
   try {
-    // Get published posts
-    const { data: posts, error: postsError } = await supabase
+    const supabase = createClient()
+
+    const { data, error } = await supabase
       .from("posts")
       .select(
         `
@@ -532,339 +331,242 @@ export async function getPublishedPosts() {
         excerpt,
         featured_image,
         status,
-        view_count,
         published_at,
         created_at,
         updated_at,
-        author_id,
-        users!posts_author_id_fkey (
-          id,
+        users (
           username,
-          full_name,
-          avatar_url
+          full_name
+        ),
+        post_categories (
+          category_id,
+          categories (
+            id,
+            name,
+            slug
+          )
         )
-      `
+      `,
+      )
+      .eq("id", id)
+      .single()
+
+    if (error) {
+      console.error("Error fetching post:", error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error in getPostById:", error)
+    return null
+  }
+}
+
+export async function getPostBySlug(slug: string) {
+  try {
+    const supabase = createClient()
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select(
+        `
+        id,
+        title,
+        slug,
+        content,
+        excerpt,
+        featured_image,
+        status,
+        published_at,
+        created_at,
+        updated_at,
+        users (
+          username,
+          full_name
+        ),
+        post_categories (
+          category_id,
+          categories (
+            id,
+            name,
+            slug
+          )
+        )
+      `,
+      )
+      .eq("slug", slug)
+      .eq("status", "published")
+      .single()
+
+    if (error) {
+      console.error("Error fetching post by slug:", error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error in getPostBySlug:", error)
+    return null
+  }
+}
+
+export async function getRecentPosts(limit = 5) {
+  try {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+      .from("posts")
+      .select(
+        `
+        id,
+        title,
+        slug,
+        excerpt,
+        featured_image,
+        published_at,
+        created_at,
+        users (
+          username,
+          full_name
+        )
+      `,
       )
       .eq("status", "published")
       .order("published_at", { ascending: false })
+      .limit(limit)
 
-    if (postsError) {
-      console.error("Published posts fetch error:", postsError)
+    if (error) {
+      console.error("Error fetching recent posts:", error)
       return []
     }
 
-    if (!posts || posts.length === 0) {
-      return []
-    }
-
-    // Get categories for each post separately with error handling
-    const postsWithCategories = await Promise.all(
-      posts.map(async (post) => {
-        try {
-          const { data: categories } = await supabase
-            .from("post_categories")
-            .select(
-              `
-              categories (
-                id,
-                name,
-                slug,
-                image_url
-              )
-            `
-            )
-            .eq("post_id", post.id)
-
-          return {
-            ...post,
-            post_categories: categories || [],
-          }
-        } catch (error) {
-          console.error(`Post ${post.id} categories fetch error:`, error)
-          return {
-            ...post,
-            post_categories: [],
-          }
-        }
-      })
-    )
-
-    return postsWithCategories
+    return data
   } catch (error) {
-    console.error("Published post fetch error:", error)
+    console.error("Error in getRecentPosts:", error)
+    return []
+  }
+}
+
+export async function getFeaturedPosts(limit = 5) {
+  try {
+    const supabase = await createClient()
+
+    // Get featured categories
+    const { data: featuredCategories, error: categoriesError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("is_featured", true)
+
+    if (categoriesError) {
+      console.error("Error fetching featured categories:", categoriesError)
+      return []
+    }
+
+    if (!featuredCategories || featuredCategories.length === 0) {
+      return []
+    }
+
+    const categoryIds = featuredCategories.map((cat) => cat.id)
+
+    // Get posts in featured categories
+    const { data, error } = await supabase
+      .from("post_categories")
+      .select(
+        `
+        posts (
+          id,
+          title,
+          slug,
+          excerpt,
+          featured_image,
+          status,
+          published_at,
+          created_at,
+          users (
+            username,
+            full_name
+          )
+        )
+      `,
+      )
+      .in("category_id", categoryIds)
+      .eq("posts.status", "published")
+      .order("posts.published_at", { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      console.error("Error fetching featured posts:", error)
+      return []
+    }
+
+    // Extract posts from the nested structure and remove duplicates
+    const postsMap = new Map()
+    data.forEach((item) => {
+      if (item.posts && !postsMap.has(item.posts.id)) {
+        postsMap.set(item.posts.id, item.posts)
+      }
+    })
+
+    return Array.from(postsMap.values())
+  } catch (error) {
+    console.error("Error in getFeaturedPosts:", error)
     return []
   }
 }
 
 export async function getPostsByCategory(categorySlug: string) {
-  const supabase = await createClient()
-
   try {
-    // First get the category
+    const supabase = await createClient()
+
+    // First get the category ID
     const { data: category, error: categoryError } = await supabase
       .from("categories")
-      .select("id, name, slug, description, image_url")
+      .select("id")
       .eq("slug", categorySlug)
       .single()
 
     if (categoryError || !category) {
-      console.error("Category fetch error:", categoryError)
-      return { category: null, posts: [] }
+      console.error("Error fetching category:", categoryError)
+      return []
     }
 
-    // Get post IDs for this category
-    const { data: postCategories, error: postCategoriesError } = await supabase
+    // Then get posts in this category
+    const { data, error } = await supabase
       .from("post_categories")
-      .select("post_id")
+      .select(
+        `
+        posts (
+          id,
+          title,
+          slug,
+          excerpt,
+          featured_image,
+          status,
+          published_at,
+          created_at,
+          users (
+            username,
+            full_name
+          )
+        )
+      `,
+      )
       .eq("category_id", category.id)
+      .eq("posts.status", "published")
+      .order("posts.published_at", { ascending: false })
 
-    if (postCategoriesError) {
-      console.error("Post categories fetch error:", postCategoriesError)
-      return { category, posts: [] }
+    if (error) {
+      console.error("Error fetching posts by category:", error)
+      return []
     }
 
-    if (!postCategories || postCategories.length === 0) {
-      return { category, posts: [] }
-    }
-
-    const postIds = postCategories.map((pc) => pc.post_id)
-
-    // Get published posts with these IDs
-    const { data: posts, error: postsError } = await supabase
-      .from("posts")
-      .select(
-        `
-        id,
-        title,
-        slug,
-        content,
-        excerpt,
-        featured_image,
-        status,
-        view_count,
-        published_at,
-        created_at,
-        updated_at,
-        author_id,
-        users!posts_author_id_fkey (
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-      `
-      )
-      .in("id", postIds)
-      .eq("status", "published")
-      .order("published_at", { ascending: false })
-
-    if (postsError) {
-      console.error("Posts fetch error:", postsError)
-      return { category, posts: [] }
-    }
-
-    if (!posts || posts.length === 0) {
-      return { category, posts: [] }
-    }
-
-    // Get categories for each post
-    const postsWithCategories = await Promise.all(
-      posts.map(async (post) => {
-        try {
-          const { data: categories } = await supabase
-            .from("post_categories")
-            .select(
-              `
-              categories (
-                id,
-                name,
-                slug,
-                image_url
-              )
-            `
-            )
-            .eq("post_id", post.id)
-
-          return {
-            ...post,
-            post_categories: categories || [],
-          }
-        } catch (error) {
-          console.error(`Post ${post.id} categories fetch error:`, error)
-          return {
-            ...post,
-            post_categories: [],
-          }
-        }
-      })
-    )
-
-    return { category, posts: postsWithCategories }
+    // Extract posts from the nested structure
+    const posts = data.map((item) => item.posts).filter(Boolean)
+    return posts
   } catch (error) {
-    console.error("Posts by category fetch error:", error)
-    return { category: null, posts: [] }
-  }
-}
-
-export async function getPostBySlug(slug: string) {
-  if (!slug) {
-    console.error("getPostBySlug called without a slug")
-    return null
-  }
-
-  const supabase = await createClient()
-
-  try {
-    // Get post by slug
-    const { data: post, error: postError } = await supabase
-      .from("posts")
-      .select(
-        `
-        id,
-        title,
-        slug,
-        content,
-        excerpt,
-        featured_image,
-        status,
-        view_count,
-        published_at,
-        created_at,
-        updated_at,
-        author_id,
-        users!posts_author_id_fkey (
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-      `
-      )
-      .eq("slug", slug)
-      .single()
-
-    if (postError) {
-      console.error("Post fetch error:", postError)
-      return null
-    }
-
-    if (!post) {
-      return null
-    }
-
-    // Get post categories
-    const { data: categories, error: categoriesError } = await supabase
-      .from("post_categories")
-      .select(
-        `
-        categories (
-          id,
-          name,
-          slug,
-          image_url
-        )
-      `
-      )
-      .eq("post_id", post.id)
-
-    if (categoriesError) {
-      console.error("Categories fetch error:", categoriesError)
-      // Hata durumunda boş kategori dizisi döndür, tamamen başarısız olmasın
-      return {
-        ...post,
-        post_categories: [],
-      }
-    }
-
-    // Görüntülenme sayısını artır
-    try {
-      const { error: updateError } = await supabase
-        .from("posts")
-        .update({
-          view_count: (post.view_count || 0) + 1,
-        })
-        .eq("id", post.id)
-
-      if (updateError) {
-        console.error("View count update error:", updateError)
-      }
-    } catch (error) {
-      console.error("View count update error:", error)
-    }
-
-    return {
-      ...post,
-      post_categories: categories || [],
-    }
-  } catch (error) {
-    console.error("Post fetch error:", error)
-    return null
-  }
-}
-
-export async function getPostById(id: string) {
-  const supabase = await createClient()
-
-  try {
-    // Get post by id
-    const { data: post, error: postError } = await supabase
-      .from("posts")
-      .select(
-        `
-        id,
-        title,
-        slug,
-        content,
-        excerpt,
-        featured_image,
-        status,
-        view_count,
-        published_at,
-        created_at,
-        updated_at,
-        author_id,
-        users!posts_author_id_fkey (
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-      `
-      )
-      .eq("id", id)
-      .single()
-
-    if (postError) {
-      console.error("Post fetch error:", postError)
-      return null
-    }
-
-    if (!post) {
-      return null
-    }
-
-    // Get post categories
-    const { data: categories } = await supabase
-      .from("post_categories")
-      .select(
-        `
-        categories (
-          id,
-          name,
-          slug,
-          image_url
-        )
-      `
-      )
-      .eq("post_id", post.id)
-
-    return {
-      ...post,
-      post_categories: categories || [],
-    }
-  } catch (error) {
-    console.error("Post fetch error:", error)
-    return null
+    console.error("Error in getPostsByCategory:", error)
+    return []
   }
 }
 
@@ -925,5 +627,140 @@ export async function autoSelectFeaturedImages() {
   } catch (error) {
     console.error("Auto-select featured images error:", error)
     return { error: "An error occurred while auto-selecting featured images" }
+  }
+}
+
+export async function getPublishedPosts() {
+  try {
+    const supabase = await createClient()
+
+    // Get published posts
+    const { data: posts, error: postsError } = await supabase
+      .from("posts")
+      .select(
+        `
+        id,
+        title,
+        slug,
+        content,
+        excerpt,
+        featured_image,
+        status,
+        view_count,
+        published_at,
+        created_at,
+        updated_at,
+        author_id,
+        users!posts_author_id_fkey (
+          id,
+          username,
+          full_name,
+          avatar_url
+        )
+      `,
+      )
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+
+    if (postsError) {
+      console.error("Published posts fetch error:", postsError)
+      return []
+    }
+
+    if (!posts || posts.length === 0) {
+      return []
+    }
+
+    // Get categories for each post separately with error handling
+    const postsWithCategories = await Promise.all(
+      posts.map(async (post) => {
+        try {
+          const { data: categories } = await supabase
+            .from("post_categories")
+            .select(
+              `
+              categories (
+                id,
+                name,
+                slug,
+                image_url
+              )
+            `,
+            )
+            .eq("post_id", post.id)
+
+          return {
+            ...post,
+            post_categories: categories || [],
+          }
+        } catch (error) {
+          console.error(`Post ${post.id} categories fetch error:`, error)
+          return {
+            ...post,
+            post_categories: [],
+          }
+        }
+      }),
+    )
+
+    return postsWithCategories
+  } catch (error) {
+    console.error("Published post fetch error:", error)
+    return []
+  }
+}
+
+export async function getStaticPublishedPosts() {
+  try {
+    const supabase = createStaticClient()
+
+    const { data: posts, error: postsError } = await supabase
+      .from("posts")
+      .select(
+        `
+        id,
+        title,
+        slug,
+        status,
+        post_categories (
+          categories (
+            id,
+            name,
+            slug,
+            image_url
+          )
+        )
+      `,
+      )
+      .eq("status", "published")
+      .order("published_at", { ascending: false })
+
+    if (postsError) {
+      console.error("Static published posts fetch error:", postsError)
+      return []
+    }
+
+    return posts || []
+  } catch (error) {
+    console.error("Static published post fetch error:", error)
+    return []
+  }
+}
+
+export async function getStaticCategories() {
+  try {
+    const supabase = createStaticClient()
+
+    const { data, error } = await supabase.from("categories").select("*").order("name")
+
+    if (error) {
+      console.error("Static category fetch error:", error)
+      return []
+    }
+
+    return data || []
+  } catch (error) {
+    console.error("Static category fetch error:", error)
+    return []
   }
 }
